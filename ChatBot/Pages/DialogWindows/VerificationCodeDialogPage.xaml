@@ -1,0 +1,25 @@
+﻿<Window x:Class="ChatBot.Pages.DialogWindows.VerificationCodeDialogPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ChatBot.Pages.DialogWindows"
+        mc:Ignorable="d"
+        Title="VerificationCodeDialogPage" Height="137" Width="275">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20" />
+            <RowDefinition Height="20" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock>Verification Code</TextBlock>
+        <TextBox Name="passwordBox" Grid.Row="1" MinWidth="250"/>
+
+        <WrapPanel Grid.Row="2" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button IsDefault="True" Click="Accept_Click" MinWidth="60" Margin="0,0,10,0">Ok</Button>
+            <Button IsCancel="True" MinWidth="60">Cancel</Button>
+        </WrapPanel>
+
+    </Grid>
+</Window>

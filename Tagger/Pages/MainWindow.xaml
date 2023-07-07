@@ -1,0 +1,325 @@
+﻿<Window x:Class="Tagger.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Tagger"
+        mc:Ignorable="d" Title="MeerST" 
+        Height="450" Width="800"
+        MaxHeight="450" MaxWidth="800" Loaded="Window_Loaded"
+        MinHeight="450" MinWidth="800">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Width" Value="300"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid Grid.Column="1">
+            <TabControl  Margin="5">
+                <TabItem Header="Запуск" FontSize="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="0.8*"/>
+                            <RowDefinition Height="0.2*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <ListBox Margin="5,5,5,5" Name="LinksLB" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="LinksLB_MouseDoubleClick"/>
+                        </Grid>
+                        <Grid Grid.Column="1">
+                            <StackPanel Grid.Row="0">
+                                <Label Content="Ссылка на группу:"/>
+
+                                <Grid>
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="0.75*"></ColumnDefinition>
+                                        <ColumnDefinition Width="0.25*"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBox Margin="5" Name="GroupInviteLinkTB" Width="280"  AcceptsReturn="True" Height="25"/>
+                                    <Button x:Name="AddLink"  Margin="5" Grid.Column="1" Click="AddLink_Click">Добавить</Button>
+                                </Grid>
+
+                                <Label Content="Текст:"/>
+                                <TextBox AcceptsReturn="True" Height="100" Name="MessageTB"/>
+                                <Label Content="Задержка в милисекундах:"/>
+                                <TextBox x:Name="TimeDelayTB"/>
+                                <Label Content="Юзеров в сообщении:"/>
+                                <TextBox x:Name="NamesInMessageTB"/>
+
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Grid.Row="1"  VerticalAlignment="Center">
+                            <Button Width="300"
+                                    Height="30" Click="StartButtonClick"
+                                    Content="Запуск" Margin="5" VerticalAlignment="Bottom"/>
+                        </StackPanel>
+
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Аккаунты" FontSize="15">
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="0.25*"/>
+                                <RowDefinition Height="0.15*"/>
+                                <RowDefinition Height="0.1*"/>
+                                <RowDefinition Height="0.5*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Grid.Row="0"
+                                    HorizontalAlignment="Center">
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Right">
+                                    <Label Content="Телефон: "/>
+                                    <Label Content="Пароль: "/>
+                                    <Label Content="Прокси: "/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBox Name="PhoneBotTB" Margin="5"/>
+                                    <TextBox Name="PasswordBotTB" Margin="5"/>
+                                    <ComboBox Margin="5" Name="ProxiesСB"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" VerticalAlignment="Center" Orientation="Horizontal">
+                                <StackPanel>
+                                    <Label Content="API-ID:" Grid.Column="0" HorizontalAlignment="Right"/>
+                                    <Label Content="API-HASH:" Grid.Column="0" HorizontalAlignment="Right"/>
+                                </StackPanel>
+
+                                <StackPanel>
+                                    <TextBox Margin="5" Grid.Column="1" Name="APIIDTB"/>
+                                    <TextBox Margin="5" Grid.Column="1" Name="APIHASHTB"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Grid.Row="2"
+                                    HorizontalAlignment="Center">
+                                <Button Width="150" Height="30"
+                                    Content="Подтвердить" Margin="5"
+                                    Click="AddBotButtonClick"/>
+                                <Button Width="150" Height="30"
+                                    Content="Удалить" Margin="5"
+                                    Click="RemoveBotButtonClick"/>
+                            </StackPanel>
+
+                            <DockPanel LastChildFill="True" Grid.Row="3">
+                                <ListBox Margin="5" Name="BotsLB" ScrollViewer.CanContentScroll="True"
+                                     SelectionChanged="BotSelect"/>
+                            </DockPanel>
+                        </Grid>
+
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="0.4*"/>
+                                <RowDefinition Height="0.15*"/>
+                                <RowDefinition Height="0.45*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Grid.Row="0"
+                                    HorizontalAlignment="Center">
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Right">
+                                    <Label Content="IP:"/>
+                                    <Label Content="Port:"/>
+                                    <Label Content="Login:"/>
+                                    <Label Content="Password:"/>
+                                    <Label Content="Type:"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBox Name="ProxyIPTB" Margin="5"/>
+                                    <TextBox Name="ProxyPortTB" Margin="5"/>
+                                    <TextBox Name="ProxyLoginTB" Margin="5"/>
+                                    <TextBox Name="ProxyPasswordTB" Margin="5"/>
+                                    <ComboBox Name="ProxyTypeCB" Margin="5">
+                                        <ComboBoxItem Content="SOCKS5"/>
+                                        <ComboBoxItem Content="HTTPS"/>
+                                    </ComboBox>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
+                                <Button Width="100" Height="30"
+                                    Content="Добавить" Margin="5"
+                                    Click="AddProxyButtonClick"/>
+
+                                <Button Width="100" Height="30"
+                                    Content="Удалить" Margin="5" Click="RemoveProxyBtnClick"/>
+                            </StackPanel>
+                            <ListBox x:Name="ProxiesLV"  Margin="5" Grid.Row="2" SelectionChanged="ProxySelected"/>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Логи"
+                         FontSize="15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*"/>
+                            <ColumnDefinition Width="0.5*"/>
+                        </Grid.ColumnDefinitions>
+                        <ListBox Margin="5" Name="AccauntsTB" Grid.Column="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <ListBox Margin="5" Name="LogTextBox" Grid.Column="1"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Статистика"
+                         FontSize="15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Все сообщения:"/>
+                                    <Label Content="0" Name="AllMessagesLbl"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Все пользователи:"/>
+                                    <Label Content="0" Name="AllUsersLbl"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Законченные группы:"/>
+                                    <Label Content="0" Name="EndedGroups"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Законченные круги:"/>
+                                    <Label Content="0" Name="EndedIteration"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Юзеров в сообщении:"/>
+                                    <Label Content="0" Name="AvgUserInMsg"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Текущая группа:"/>
+                                    <Label Content="0" Name="CurrentGroupId"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Все юзеры:"/>
+                                    <Label Content="0" Name="AllPartLb"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Осталось юзеров"/>
+                                    <Label Content="0" Name="UsersRestLb"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <ListBox Margin="5" Name="ChatsListBox" Grid.Row="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     HorizontalContentAlignment="Stretch">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.Resources>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                                    <Setter Property="Padding" Value="5"/>
+                                                </Style>
+                                            </Grid.Resources>
+
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="0.4*"/>
+                                                <ColumnDefinition Width="0.2*"/>
+                                                <ColumnDefinition Width="0.2*"/>
+                                                <ColumnDefinition Width="0.2*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBox Grid.Column="0" Text="{Binding Path=Group}"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Path=SendedMessagesInCurrentCycle}"/>
+                                            <TextBox Grid.Column="2" Text="{Binding Path=SendedMessages}"/>
+                                            <TextBox Grid.Column="3" Text="{Binding Path=TaggedUsers}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <ListBox Margin="5" Name="StatisticListBox" Grid.Row="1"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     HorizontalContentAlignment="Stretch">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.Resources>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                                    <Setter Property="Padding" Value="5"/>
+                                                </Style>
+                                            </Grid.Resources>
+
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="0.4*"/>
+                                                <ColumnDefinition Width="0.2*"/>
+                                                <ColumnDefinition Width="0.2*"/>
+                                                <ColumnDefinition Width="0.2*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBox Grid.Column="0" Text="{Binding Path=Phone}"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Path=TaggedUsers}"/>
+                                            <TextBox Grid.Column="2" Text="{Binding Path=SendedMessages}"/>
+                                            <TextBox Grid.Column="3" Text="{Binding Path=FloodWait}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Grid>
+</Window>

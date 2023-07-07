@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
+    <PackageReference Include="StarkSoftProxy" Version="1.6.0" />
+    <PackageReference Include="WTelegramClient" Version="3.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Core\Data\" />
+  </ItemGroup>
+
+</Project>
