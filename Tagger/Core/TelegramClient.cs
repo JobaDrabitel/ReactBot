@@ -31,8 +31,7 @@ namespace ChatBot.Core
         private List<InputPeerChannel> inputPeers = new List<InputPeerChannel>();
 
         private bool isComplete = false;
-        private bool isSynchro = false;
-
+        public static Messages_AvailableReactions all_emoji;
         public static int messagesSended = 0;
         public static int currentGroup = 0;
         public static int fullCount = 1;
@@ -50,7 +49,7 @@ namespace ChatBot.Core
         public static IDictionary<long, ChatBase> Chats = new Dictionary<long, ChatBase>();
         private bool isWork = false;
 
-        public async Task Start(string inviteLink, string message, int timeDelay, int usersInMessage)
+        public async Task Start(string inviteLink, int countOfMessages, int timeDelay, string emoji)
         {
             if (clients.Count == 0)
             {
@@ -108,17 +107,17 @@ namespace ChatBot.Core
                 count = 1;
                 int i = 0;
                 int offset = 0;
-                while (count > 0 && isBanned.Contains(false))
+                while (count <= countOfMessages && isBanned.Contains(false))
                 {
                     if (clientsStatus[i] && clients[i].User != null && !isBanned[i])
                     {
                         Client client = clients[i];
-                        _loger.LogAction($"Начата рассылка: {client.User.username}");
+                        _loger.LogAction($"Начата рассылка: {client.User.username} в {inviteLink}");
 
                         await Task.Run(async () =>
                         {
-                            _ = EditAccount(client, "a", "a", "a", "a", "avrgkhjfighfa");
-                            _loger.LogAction($"Начата рассылка: {client.User.username}");
+                            _ = SendReactions(client, countOfMessages, emoji);
+                            _loger.LogAction($"Закончена рассылка: {client.User.username} в {inviteLink}");
                         });
 
                         clientsStatus[i] = false;
@@ -133,7 +132,6 @@ namespace ChatBot.Core
                 count = 1;
             });
 
-            isSynchro = false;
             foreach (var client in clients)
                 if (inputPeers[clients.IndexOf(client)] != null)
                     try
@@ -162,11 +160,12 @@ namespace ChatBot.Core
                     currentGroup++;
 
                 endedChannels++;
-                await Start(inviteLinks[currentGroup], message, timeDelay, usersInMessage);
+                await Start(inviteLinks[currentGroup], countOfMessages, timeDelay, emoji);
             }
         }
 
-        private async Task<Client> CreateClient(Bots item)
+
+        public async Task<Client> CreateClient(Bots item)
         {
             ProxyClient client = null;
             var proxies = _context.Proxies.FirstOrDefault(x => x.id == item.proxy_id);
@@ -231,154 +230,6 @@ namespace ChatBot.Core
                 MessageBox.Show("Не удается получить конфиг. Попрбуйте перезагрузить приложение и попробуйте снова.");
             }
             return null;
-        }
-
-        private async Task SpamStart(Client client, string message, int timeDelay, int offset, int usersInMessage)
-        {
-            Channels_ChannelParticipants channelParticipants = null;
-            try
-            {
-                channelParticipants = await client.Channels_GetParticipants(inputPeers[clients.IndexOf(client)], new ChannelParticipantsMentions(), 200 * offset);
-                _loger.LogAction($"Получено {channelParticipants.count} участников");
-            }
-            catch (Exception ex)
-            {
-                _loger.LogAction($"Не удалось подключится к каналу, возможно юзер {client.User.username} был забанен\nОшибка {ex}");
-                MainInfoLoger.Log($"Не удалось подключится к каналу, возможно юзер {client.User.username} был забанен\nОшибка {ex}");
-                clientsStatus[clients.IndexOf(client)] = false;
-                isBanned[clients.IndexOf(client)] = true;
-                IsForbidden(client, ex);
-
-                return;
-            }
-
-
-
-            if (channelParticipants.participants.Count() == 0)
-                count -= 200;
-
-            if (!isSynchro)
-            {
-                fullCount = channelParticipants.count;
-                count = fullCount;
-                isSynchro = true;
-            }
-
-            List<User> id = new List<User>();
-            foreach (var userID in channelParticipants.participants)
-            {
-                if (!userID.IsAdmin && !clients.Any(x => x.UserId == userID.UserId))
-                {
-                    channelParticipants.users.TryGetValue(userID.UserId, out var user);
-                    id.Add(user);
-                }
-            }
-
-            string tagMessage = "";
-            int k = 0;
-            Random random = new Random();
-            Dictionary<long, User> users = new Dictionary<long, User>();
-
-            for (int i = 0; i < id.Count; i++)
-            {
-                if (!users.ContainsValue(id[i]))
-                {
-                    users.Add(id[i].id, id[i]);
-                    tagMessage += $"[ㅤ](tg://user?id={id[i].id}) ";
-                    k++;
-                }
-
-                if ((k >= usersInMessage || i == id.Count - 1) && tagMessage != "")
-                {
-                    if (!isBanned[clients.IndexOf(client)])
-                    {
-                        MessageEntity[] messageEntities = new MessageEntity[usersInMessage];
-                        messageEntities = Markdown.MarkdownToEntities(null, ref tagMessage, users: users);
-
-                        int j = 0;
-                        foreach (var mesEntity in messageEntities)
-                            mesEntity.offset = message.Length + j++;
-
-                        users.Clear();
-                        Stopwatch stopwatch = new Stopwatch();
-                        stopwatch.Start();
-                        Task longRunningTask = StartSend(client, message, inputPeers[clients.IndexOf(client)], tagMessage, messageEntities);
-                        tagMessage = "";
-                        Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
-                        Task completedTask = await Task.WhenAny(longRunningTask, timeoutTask);
-                        stopwatch.Stop();
-
-                        if (completedTask == longRunningTask)
-                        {
-                            _loger.LogAction($"Отправка сообщения закончена");
-                            _loger.LogAction($"Время {stopwatch.Elapsed}");
-                            _loger.LogAction($"Клиент: {client.User.phone}");
-
-                            await Task.Delay(timeDelay + random.Next(100, 300));
-
-                            taggedUsersInGroup[currentGroup] += k;
-                            taggedUsers[clients.IndexOf(client)] += k;
-                            count -= k;
-                            _loger.LogAction($"Клиент: {client.User.phone} Тегнул юзеров: {taggedUsers[clients.IndexOf(client)]}");
-                            k = 0;
-                        }
-                        else
-                        {
-                            _loger.LogAction($"Сообщение не отправилось за 5 секунд");
-                            _loger.LogAction($"Клиент: {client.User.phone}");
-
-                            tagMessage = "";
-                            taggedUsers[clients.IndexOf(client)] += k;
-                            taggedUsersInGroup[currentGroup] += k;
-                            count -= k;
-                            k = 0;
-
-                            var floodWait = GetFloodWait();
-                            _loger.LogAction($"Пользователь долго не отвечает. Заморозка потока на {floodWait} секунд");
-                            MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
-
-                            isFloodWait[clients.IndexOf(client)] = floodWait;
-                            await Task.Delay(floodWait * 1000);
-                            isFloodWait[clients.IndexOf(client)] = 0;
-                        }
-                    }
-                    else
-                        return;
-                }
-
-            }
-
-            clientsStatus[clients.IndexOf(client)] = true;
-        }
-
-        private async Task StartSend(Client client, string message, InputPeerChannel inputChat, string tagMessage, MessageEntity[] messageEntities)
-        {
-            try
-            {
-                _loger.LogAction($"Бот: {client.User.phone}\nОтправляем сообщение: {tagMessage}");
-                var myMessage = await client.SendMessageAsync(inputChat, message + ' ' + tagMessage, entities: messageEntities);
-                messagesSended++;
-                sendedMessages[clients.IndexOf(client)]++;
-                sendedMessagesInCycle[currentGroup]++;
-                sendedMessagesInGroup[currentGroup]++;
-            }
-            catch (Exception rpcex)
-            {
-                if (rpcex.Message.Contains("FLOOD"))
-                {
-                    var floodWait = GetFloodWait();
-                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
-                    MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
-
-                    isFloodWait[clients.IndexOf(client)] = floodWait;
-                    await Task.Delay(floodWait * 1000);
-                    isFloodWait[clients.IndexOf(client)] = 0;
-
-                    await StartSend(client, message, inputPeers[clients.IndexOf(client)], tagMessage, messageEntities);
-                }
-
-                IsForbidden(client, rpcex);
-            }
         }
 
         private static bool IsForbidden(Client client, Exception rpcex)
@@ -519,10 +370,20 @@ namespace ChatBot.Core
 
             return 0;
         }
-        public async Task SendReactions(Client client)
+        public async Task SendReactions(Client client, int countOfMessages, string reactionEmoji)
         {
-            var inputChannel = new InputChannel(inputPeers[0].channel_id, inputPeers[0].access_hash);
-            var all_emoji = await client.Messages_GetAvailableReactions();
+            var inputChannel = new InputChannel(inputPeers[clients.IndexOf(client)].channel_id, inputPeers[clients.IndexOf(client)].access_hash);
+            if (all_emoji == null)
+            {
+                try
+                {
+                    all_emoji = await client.Messages_GetAvailableReactions();
+                }
+                catch
+                {
+                    all_emoji = null;
+                }
+            }
             var fullChannel = await client.Channels_GetFullChannel(inputChannel);
             Reaction reaction;
             if (fullChannel.full_chat.AvailableReactions is ChatReactionsSome some)
@@ -537,7 +398,22 @@ namespace ChatBot.Core
                 }
                 else
                 {
-                    reaction = new ReactionEmoji { emoticon = all_emoji.reactions[0].reaction };
+                    try
+                    {
+                        reaction = new ReactionEmoji
+                        {
+                            emoticon = all_emoji.reactions.FirstOrDefault(r => r.reaction == reactionEmoji).reaction.ToString()
+                        };
+                    }
+                    catch
+                    {
+                        _loger.LogAction($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
+                        MainInfoLoger.Log($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
+                        reaction = new ReactionEmoji
+                        {
+                            emoticon = all_emoji.reactions[0].reaction
+                        };
+                    }
                 }
             }
             else
@@ -549,39 +425,74 @@ namespace ChatBot.Core
             {
                 return;
             }
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < countOfMessages; i++)
             {
-                var messages = await client.Messages_GetHistory(inputPeers[0], add_offset: i, limit: 1);
+                var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 1);
                 foreach (var message in messages.Messages)
                 {
-                    if (i == 20)
-                        _loger.LogAction($"Ставим реакцию под сообщением: {199}");
+
                     try
                     {
-                        await client.Messages_SendReaction(inputPeers[0], message.ID, reaction: new[] { reaction });
+                        await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { reaction });
+                        count++;
                         _loger.LogAction($"Ставим реакцию под сообщением: {i}");
                         await Task.Delay(1000);
                     }
                     catch (Exception e) { _loger.LogAction(e.Message); }
                 }
-            }
+             }
+            clientsStatus[clients.IndexOf(client)] = true;   
         }
-        private async Task EditAccount(Client client, string filePath, string firstName, string lastName, string about, string userName)
+        public async Task EditAccount(Client client, string filePath, string firstName, string lastName, string about, string userName)
         {
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                try
+                {
+                    var inputFile = await client.UploadFileAsync(filePath);
+                    await client.Photos_UploadProfilePhoto(inputFile);
+                }
+                catch 
+                {
+                    _loger.LogAction($"Неверный путь до файла");
+                    MessageBox.Show("Возникла ошибка изменения фотографии, возможно, путь указан неверно"); 
+                }
+            }
+            if (firstName == "")
+            {
+                firstName = null;
+            }
+
+            if (lastName == "")
+            {
+                lastName = null;
+            }
+
+            if (about == "")
+            {
+                about = null;
+            }
+
             try
             {
-                var inputFile = await client.UploadFileAsync(@"C:\Users\legen\Downloads\загружено.jpg");
-                await client.Photos_UploadProfilePhoto(inputFile);
+
+                await client.Account_UpdateProfile(firstName, lastName, about);
             }
-            catch { _loger.LogAction($"Неверный путь до файла"); }
-            await client.Account_UpdateProfile(firstName, lastName, about);
+            catch
+            {
+                MessageBox.Show("Возникла ошибка изменения имени, фамилии или статуса, возможно были использованы некорректные символы");
+            }
             try
             {
                 await client.Account_UpdateUsername(userName);
             }
-            catch(Exception ex ) { _loger.LogAction(ex.Message); }
-            await Task.Delay(10000);
+            catch(Exception ex )
+            {
+                _loger.LogAction(ex.Message);
+                MessageBox.Show("Возникла ошибка изменения юзернейма, возможно, ваш вариант занят или были использованы некорректные символы");
+            }
+            await Task.Delay(1000);
         }
-
     }
 }

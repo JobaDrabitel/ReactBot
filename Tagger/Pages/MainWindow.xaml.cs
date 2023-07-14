@@ -1,8 +1,10 @@
 ﻿using ChatBot.Core;
+using Microsoft.Win32;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data.Entity;
 using System.Data.Entity.Migrations;
 using System.IO;
 using System.Linq;
@@ -15,15 +17,18 @@ using Tagger.Core;
 using Tagger.Core.Data;
 using Tagger.Core.Loger.LogServices;
 using Tagger.Core.ViewModels;
+using EmojiSharp;
 
 namespace Tagger
 {
 
     public partial class MainWindow : Window
     {
+        string _selectedImagePath;
         private DataModel _context = new DataModel();
         private LogService<MainWindow> _loger = new LogService<MainWindow>();
         static StreamWriter WTelegramLogs = new StreamWriter("WTelegram.log", true, Encoding.UTF8) { AutoFlush = true };
+
 
         private ObservableCollection<UserData> users { get; set; } = new ObservableCollection<UserData>();
 
@@ -32,24 +37,38 @@ namespace Tagger
             InitializeComponent();
             WTelegram.Helpers.Log = (lvl, str) => WTelegramLogs.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{"TDIWE!"[lvl]}] {str}");
             WorkStatisticViewer.window = this;
+            EmojiCB.ItemsSource = new List<string>
+            {
+                "\U0001F389", // 🎉
+                "\U0001F600", // 😀
+                "\U0001F4A9", // 💩
+                "\U0001F525", // 🔥
+                "\U0001F44D", // 👍
+                "\U0001F60D", // 😍
+                "\U0001F496", // 💖
+                "\U0001F4A1", // 💡
+                "\U0001F60E", // 😎
+                "\U0001F4AA"  // 💪
+            };
+
         }
 
         private async void StartButtonClick(object sender, RoutedEventArgs e)
         {
-        
-            if (MessageTB.Text == "")
+            if (LinksLB.Items.Count != 0)
             {
-                MessageBox.Show("Отсутствует текст сообщения");
+                string selectedItem = EmojiCB.SelectedItem as string;
+                _loger.LogAction("Начата работа...");
+                if (selectedItem!= null)
+                    emojiTB.Text = selectedItem;
+                TelegramClient client = new TelegramClient();
+                await Task.Run(async () =>
+                    Application.Current.Dispatcher.Invoke(async () =>
+                        await client.Start(TelegramClient.inviteLinks[0], Convert.ToInt32(MessagesCountTB.Text), Convert.ToInt32(timeDelayTB.Text), emojiTB.Text)
+                    )) ;
             }
             else
-            {
-                 _loger.LogAction("Начата работа...");
-                TelegramClient client = new TelegramClient();
-                await Task.Run( async () =>
-                    Application.Current.Dispatcher.Invoke(async () =>
-                        await client.Start(TelegramClient.inviteLinks[0], MessageTB.Text, Convert.ToInt32(TimeDelayTB.Text), Convert.ToInt32(NamesInMessageTB.Text))
-                    ));
-            }
+                MessageBox.Show("Добавьте ссылки для начала работы");
         }
 
         private void AddBotButtonClick(object sender, RoutedEventArgs e)
@@ -57,7 +76,7 @@ namespace Tagger
             if (ProxiesСB.SelectedItem != null)
             {
                 var proxy = _context.Proxies.FirstOrDefault(x => x.ip == ProxiesСB.SelectedItem.ToString());
-                   
+
                 if (!int.TryParse(APIIDTB.Text, out var apiId))
                     MessageBox.Show($"Неверное APIID");
                 else
@@ -184,7 +203,7 @@ namespace Tagger
 
                 PhoneBotTB.Text = bot.phone;
                 PasswordBotTB.Text = bot.password;
-                if(bot.Proxies == null) 
+                if (bot.Proxies == null)
                     ProxiesСB.SelectedItem = "";
                 else
                     ProxiesСB.SelectedItem = bot.Proxies.ip.ToString();
@@ -199,7 +218,7 @@ namespace Tagger
         {
             Proxies proxy = _context.Proxies.FirstOrDefault(x => x.ip == ProxyIPTB.Text);
 
-            if(ProxyIPTB.Text != "")
+            if (ProxyIPTB.Text != "")
             {
                 _context.Proxies.Remove(proxy);
                 _context.SaveChanges();
@@ -224,7 +243,7 @@ namespace Tagger
                 ProxyTypeCB.Text = proxy.type;
             }
 
-            if(listBox.SelectedItem != null)
+            if (listBox.SelectedItem != null)
                 _loger.LogAction($"Выбран прокси: {listBox.SelectedItem}");
         }
 
@@ -254,6 +273,44 @@ namespace Tagger
                 string selectedLink = LinksLB.SelectedItem.ToString();
                 LinksLB.Items.Remove(selectedLink);
                 TelegramClient.inviteLinks.Remove(selectedLink);
+            }
+        }
+        private void OpenFileDialog_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Изображения (*.jpg, *.png)|*.jpg;*.png|Все файлы (*.*)|*.*";
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                _selectedImagePath = openFileDialog.FileName;
+            }
+        }
+
+        private async void ChangeAccInfoButton_Click(object sender, RoutedEventArgs e)
+        {
+            TelegramClient telegramClient = new TelegramClient();
+            var selectedItem = BotsLB.SelectedItem; // Получаем выбранный элемент из ListBox
+            if (selectedItem != null)
+            {
+                using (var dbContext = new DataModel()) // Замените YourDbContext на ваш класс контекста EF
+                {
+                    // Выполняем LINQ-запрос для поиска первой записи с указанным номером телефона
+                    var matchingItem = dbContext.Bots.FirstOrDefault(bot => bot.phone == selectedItem);
+
+                    if (matchingItem != null)
+                    {
+                        try
+                        {
+                            var selectedClient = await telegramClient.CreateClient(matchingItem);
+                            await telegramClient.EditAccount(selectedClient, _selectedImagePath, UserFirstNameTB.Text, UserLastNameTB.Text, UserAboutTB.Text, UsernameTB.Text);
+                        }
+                        catch (Exception ex) { _loger.LogAction(ex.Message); }
+                        finally
+                        {
+                            MessageBox.Show("Данные успешно изменены!");
+                        }
+                    }
+                }
             }
         }
 
