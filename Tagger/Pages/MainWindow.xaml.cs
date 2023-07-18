@@ -17,7 +17,6 @@ using Tagger.Core;
 using Tagger.Core.Data;
 using Tagger.Core.Loger.LogServices;
 using Tagger.Core.ViewModels;
-using EmojiSharp;
 
 namespace Tagger
 {

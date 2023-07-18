@@ -280,7 +280,6 @@
     <Compile Include="Core\TelegramClient.cs" />
     <Compile Include="Core\Data\UserData.cs" />
     <Compile Include="Core\ViewModels\WorkStatisticViewer.cs" />
-    <Compile Include="EmojiSharp\Emoji.cs" />
     <Compile Include="Migrations\202305201143597_init.cs" />
     <Compile Include="Migrations\202305201143597_init.designer.cs">
       <DependentUpon>202305201143597_init.cs</DependentUpon>
@@ -350,12 +349,6 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="EmojiSharp\License.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="EmojiSharp\EmojiLicense.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets" Condition="Exists('..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets')" />

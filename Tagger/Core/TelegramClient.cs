@@ -32,19 +32,16 @@ namespace ChatBot.Core
 
         private bool isComplete = false;
         public static Messages_AvailableReactions all_emoji;
-        public static int messagesSended = 0;
+        public static int reactionsSended = 0;
         public static int currentGroup = 0;
         public static int fullCount = 1;
         public static int count = 1;
         public static int endedChannels = 0;
         public static int endedIteration = 0;
         public static List<Task> tasks = new List<Task>();
-        public static List<int> taggedUsers = new List<int>();
-        public static List<int> sendedMessages = new List<int>();
-
-        public static List<int> taggedUsersInGroup = new List<int>();
-        public static List<int> sendedMessagesInGroup = new List<int>();
-        public static List<int> sendedMessagesInCycle = new List<int>();
+        public static List<int> sendedReactions = new List<int>();
+        public static List<int> sendedReactionsInGroup = new List<int>();
+        public static List<int> sendedReactionsInCycle = new List<int>();
         public static IDictionary<long, User> Users = new Dictionary<long, User>();
         public static IDictionary<long, ChatBase> Chats = new Dictionary<long, ChatBase>();
         private bool isWork = false;
@@ -61,9 +58,7 @@ namespace ChatBot.Core
                         clients.Add(client);
                         clientsStatus.Add(true);
                         isFloodWait.Add(0);
-
-                        taggedUsers.Add(0);
-                        sendedMessages.Add(0);
+                        sendedReactions.Add(0);
                     }
                 }
             }
@@ -86,16 +81,15 @@ namespace ChatBot.Core
                 }
             }
 
-            if (sendedMessagesInCycle.Count == 0)
+            if (sendedReactionsInCycle.Count == 0)
                 for (int i = 0; i < inviteLinks.Count; i++)
-                    sendedMessagesInCycle.Add(0);
+                    sendedReactionsInCycle.Add(0);
 
             if (!isWork)
             {
                 for (int i = 0; i < inviteLinks.Count; i++)
                 {
-                    sendedMessagesInGroup.Add(0);
-                    taggedUsersInGroup.Add(0);
+                    sendedReactionsInGroup.Add(0);
                 }
 
                 WorkStatisticViewer.StatisticLoad();
@@ -116,7 +110,7 @@ namespace ChatBot.Core
 
                         await Task.Run(async () =>
                         {
-                            _ = SendReactions(client, countOfMessages, emoji);
+                            _ = SendReactions(client, countOfMessages, emoji, timeDelay);
                             _loger.LogAction($"Закончена рассылка: {client.User.username} в {inviteLink}");
                         });
 
@@ -152,7 +146,7 @@ namespace ChatBot.Core
             {
                 if (currentGroup == inviteLinks.Count - 1)
                 {
-                    sendedMessagesInCycle.Clear();
+                    sendedReactionsInCycle.Clear();
                     endedIteration++;
                     currentGroup = 0;
                 }
@@ -364,13 +358,13 @@ namespace ChatBot.Core
                     string numberString = match.Groups[1].Value;
                     int.TryParse(numberString, out int number);
                     logs.Clear();
-                    return number + 2;
+                    return number;
                 }
             }
 
             return 0;
         }
-        public async Task SendReactions(Client client, int countOfMessages, string reactionEmoji)
+        public async Task SendReactions(Client client, int countOfMessages, string reactionEmoji, int delay)
         {
             var inputChannel = new InputChannel(inputPeers[clients.IndexOf(client)].channel_id, inputPeers[clients.IndexOf(client)].access_hash);
             if (all_emoji == null)
@@ -425,24 +419,86 @@ namespace ChatBot.Core
             {
                 return;
             }
-            for (int i = 0; i < countOfMessages; i++)
+            for (int i = 0; i < countOfMessages; i+=100)
             {
-                var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 1);
+                var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 100);
                 foreach (var message in messages.Messages)
                 {
+                        if (message is TL.MessageService messageService == false)
+                        { 
 
-                    try
-                    {
-                        await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { reaction });
-                        count++;
-                        _loger.LogAction($"Ставим реакцию под сообщением: {i}");
-                        await Task.Delay(1000);
-                    }
-                    catch (Exception e) { _loger.LogAction(e.Message); }
+                            Stopwatch stopwatch = new Stopwatch();
+                            stopwatch.Start();
+                            Task longRunningTask = SendReactionToMessageAsync(client, delay, reaction, message, countOfMessages);
+                            Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
+                            Task completedTask = await Task.WhenAny(longRunningTask, timeoutTask);
+                            stopwatch.Stop();
+
+                            if (completedTask == longRunningTask)
+                            {
+                                _loger.LogAction($"Отправка сообщения закончена");
+                                _loger.LogAction($"Время {stopwatch.Elapsed}");
+                                _loger.LogAction($"Клиент: {client.User.phone}");
+                                reactionsSended++;
+                                sendedReactions[clients.IndexOf(client)]++;
+                                sendedReactionsInCycle[clients.IndexOf(client)]++;
+                                sendedReactionsInGroup[clients.IndexOf(client)]++;
+                                count++;
+                                await Task.Delay(delay);
+                            }
+                            else
+                            {
+                                _loger.LogAction($"Реакция не отправилась за 5 секунд");
+                                _loger.LogAction($"Клиент: {client.User.phone}");
+                                var floodWait = GetFloodWait();
+                                if (floodWait != 0)
+                                {
+                                    _loger.LogAction($"Пользователь долго не отвечает. Флудвейт на {floodWait} секунд");
+                                    MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
+                                    isFloodWait[clients.IndexOf(client)] = floodWait;
+                                    await Task.Delay(floodWait * 1000);
+                                    isFloodWait[clients.IndexOf(client)] = 0;
+                                }
+                            }
+                        }
+                        else
+                            countOfMessages++;
+
                 }
              }
             clientsStatus[clients.IndexOf(client)] = true;   
         }
+
+        private async Task SendReactionToMessageAsync(Client client, int delay, Reaction reaction, MessageBase message, int countOfMessages)
+        {
+            try
+            {
+                await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { reaction }); 
+                _loger.LogAction($"Ставим реакцию {reactionsSended}");
+            }
+            catch (Exception e)
+            {
+                if (e.Message.Contains("FLOOD"))
+                {
+                    var floodWait = GetFloodWait();
+                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
+                    MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
+
+                    isFloodWait[clients.IndexOf(client)] = floodWait;
+                    await Task.Delay(floodWait * 1000);
+                    isFloodWait[clients.IndexOf(client)] = 0;
+
+                    await SendReactionToMessageAsync(client, delay, reaction, message, countOfMessages);
+                }
+
+                else if (e.Message.Contains("MESSAGE"))
+                {
+                    countOfMessages++;
+                }
+                _loger.LogAction(e.Message);
+            }
+        }
+
         public async Task EditAccount(Client client, string filePath, string firstName, string lastName, string about, string userName)
         {
 

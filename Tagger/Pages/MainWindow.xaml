@@ -206,10 +206,6 @@
                                     <Label Content="0" Name="AllMessagesLbl"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Label Content="Все пользователи:"/>
-                                    <Label Content="0" Name="AllUsersLbl"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
                                     <Label Content="Законченные группы:"/>
                                     <Label Content="0" Name="EndedGroups"/>
                                 </StackPanel>
@@ -217,24 +213,13 @@
                                     <Label Content="Законченные круги:"/>
                                     <Label Content="0" Name="EndedIteration"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <Label Content="Юзеров в сообщении:"/>
-                                    <Label Content="0" Name="AvgUserInMsg"/>
-                                </StackPanel>
+
                             </StackPanel>
 
                             <StackPanel Grid.Column="1">
                                 <StackPanel Orientation="Horizontal">
                                     <Label Content="Текущая группа:"/>
                                     <Label Content="0" Name="CurrentGroupId"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <Label Content="Все юзеры:"/>
-                                    <Label Content="0" Name="AllPartLb"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <Label Content="Осталось юзеров"/>
-                                    <Label Content="0" Name="UsersRestLb"/>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>

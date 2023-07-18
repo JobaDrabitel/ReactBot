@@ -1,6 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Tagger",
+    "\\Tagger\\Core"
   ],
+  "SelectedNode": "\\ChatBot.sln",
   "PreviewInSolutionExplorer": false
 }
