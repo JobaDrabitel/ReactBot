@@ -367,7 +367,7 @@ namespace ChatBot.Core
         }
         public async Task SendReactions(Client client, int countOfMessages, string reactionEmoji, int delay, string inviteLink)
         {
-            List<long> reactorsId = new List<long>();   
+            List<long> reactorsId = new List<long>();
             _reaction = await CheckReactions(client, reactionEmoji);
 
             if (_reaction == null)
@@ -466,7 +466,8 @@ namespace ChatBot.Core
                     all_emoji = null;
                 }
             }
-            try {
+            try
+            {
                 var fullChannel = await client.Channels_GetFullChannel(inputChannel);
                 if (fullChannel.full_chat.AvailableReactions is ChatReactionsSome some)
                 {
@@ -506,13 +507,13 @@ namespace ChatBot.Core
                 return _reaction;
             }
             catch { return null; }
-            }
+        }
 
         private async Task SendReactionToMessageAsync(Client client, int delay, MessageBase message, int countOfMessages)
         {
             try
             {
-                await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { _reaction }); 
+                await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { _reaction });
                 _loger.LogAction($"Ставим реакцию {reactionsSended}");
             }
             catch (Exception e)
@@ -557,26 +558,16 @@ namespace ChatBot.Core
                     var inputFile = await client.UploadFileAsync(filePath);
                     await client.Photos_UploadProfilePhoto(inputFile);
                 }
-                catch 
+                catch
                 {
                     _loger.LogAction($"Неверный путь до файла");
-                    MessageBox.Show("Возникла ошибка изменения фотографии, возможно, путь указан неверно"); 
+                    MessageBox.Show("Возникла ошибка изменения фотографии, возможно, путь указан неверно");
                 }
             }
-            if (firstName == "")
-            {
-                firstName = null;
-            }
 
-            if (lastName == "")
-            {
-                lastName = null;
-            }
-
-            if (about == "")
-            {
-                about = null;
-            }
+            firstName = firstName == "" ? null : firstName;
+            lastName = lastName == "" ? null : lastName;
+            about = about == "" ? null : about;
 
             try
             {
@@ -591,7 +582,7 @@ namespace ChatBot.Core
             {
                 await client.Account_UpdateUsername(userName);
             }
-            catch(Exception ex )
+            catch (Exception ex)
             {
                 _loger.LogAction(ex.Message);
                 MessageBox.Show("Возникла ошибка изменения юзернейма, возможно, ваш вариант занят или были использованы некорректные символы");
