@@ -29,7 +29,8 @@ namespace ChatBot.Core
         public static List<bool> isBanned = new List<bool>();
         public static List<int> isFloodWait = new List<int>();
         private List<InputPeerChannel> inputPeers = new List<InputPeerChannel>();
-
+        static string _emoji;
+        static Reaction _reaction;
         private bool isComplete = false;
         public static Messages_AvailableReactions all_emoji;
         public static int reactionsSended = 0;
@@ -48,6 +49,7 @@ namespace ChatBot.Core
 
         public async Task Start(string inviteLink, int countOfMessages, int timeDelay, string emoji)
         {
+            _emoji = emoji;
             if (clients.Count == 0)
             {
                 foreach (var item in _context.Bots)
@@ -110,8 +112,7 @@ namespace ChatBot.Core
 
                         await Task.Run(async () =>
                         {
-                            _ = SendReactions(client, countOfMessages, emoji, timeDelay);
-                            _loger.LogAction($"Закончена рассылка: {client.User.username} в {inviteLink}");
+                            _ = SendReactions(client, countOfMessages, emoji, timeDelay, inviteLink);
                         });
 
                         clientsStatus[i] = false;
@@ -364,72 +365,43 @@ namespace ChatBot.Core
 
             return 0;
         }
-        public async Task SendReactions(Client client, int countOfMessages, string reactionEmoji, int delay)
+        public async Task SendReactions(Client client, int countOfMessages, string reactionEmoji, int delay, string inviteLink)
         {
-            var inputChannel = new InputChannel(inputPeers[clients.IndexOf(client)].channel_id, inputPeers[clients.IndexOf(client)].access_hash);
-            if (all_emoji == null)
+            List<long> reactorsId = new List<long>();   
+            _reaction = await CheckReactions(client, reactionEmoji);
+
+            if (_reaction == null)
+            {
+                isBanned[clients.IndexOf(client)] = true;
+                clientsStatus[clients.IndexOf(client)] = true;
+                return;
+            }
+            for (int i = 0; i < countOfMessages; i += 100)
             {
                 try
                 {
-                    all_emoji = await client.Messages_GetAvailableReactions();
-                }
-                catch
-                {
-                    all_emoji = null;
-                }
-            }
-            var fullChannel = await client.Channels_GetFullChannel(inputChannel);
-            Reaction reaction;
-            if (fullChannel.full_chat.AvailableReactions is ChatReactionsSome some)
-            {
-                reaction = some.reactions[1];
-            }
-            else if (fullChannel.full_chat.AvailableReactions is ChatReactionsAll all)
-            {
-                if (all.flags.HasFlag(ChatReactionsAll.Flags.allow_custom) && client.User.flags.HasFlag(TL.User.Flags.premium))
-                {
-                    reaction = new ReactionCustomEmoji { document_id = 5190875290439525089 };
-                }
-                else
-                {
-                    try
-                    {
-                        reaction = new ReactionEmoji
-                        {
-                            emoticon = all_emoji.reactions.FirstOrDefault(r => r.reaction == reactionEmoji).reaction.ToString()
-                        };
-                    }
-                    catch
-                    {
-                        _loger.LogAction($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
-                        MainInfoLoger.Log($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
-                        reaction = new ReactionEmoji
-                        {
-                            emoticon = all_emoji.reactions[0].reaction
-                        };
-                    }
-                }
-            }
-            else
-            {
-                reaction = null;
-            }
+                    var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 100);
 
-            if (reaction == null)
-            {
-                return;
-            }
-            for (int i = 0; i < countOfMessages; i+=100)
-            {
-                var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 100);
-                foreach (var message in messages.Messages)
-                {
-                        if (message is TL.MessageService messageService == false)
-                        { 
+                    foreach (var messageBase in messages.Messages)
+                    {
+                        if (messageBase is MessageService messageService)
+                            continue;
+                        if (messageBase is Message message)
+                            if (message.reactions != null && message.reactions.recent_reactions != null)
+                                foreach (var reactors in message.reactions.recent_reactions)
+                                    reactorsId.Add(reactors.peer_id.ID);
+                        if (reactorsId.Contains(client.User.id) == false)
+                        {
 
                             Stopwatch stopwatch = new Stopwatch();
                             stopwatch.Start();
-                            Task longRunningTask = SendReactionToMessageAsync(client, delay, reaction, message, countOfMessages);
+                            Task longRunningTask = SendReactionToMessageAsync(client, delay, messageBase, countOfMessages);
+                            if (_reaction == null)
+                            {
+                                isBanned[clients.IndexOf(client)] = true;
+                                clientsStatus[clients.IndexOf(client)] = true;
+                                return;
+                            }
                             Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
                             Task completedTask = await Task.WhenAny(longRunningTask, timeoutTask);
                             stopwatch.Stop();
@@ -441,8 +413,8 @@ namespace ChatBot.Core
                                 _loger.LogAction($"Клиент: {client.User.phone}");
                                 reactionsSended++;
                                 sendedReactions[clients.IndexOf(client)]++;
-                                sendedReactionsInCycle[clients.IndexOf(client)]++;
-                                sendedReactionsInGroup[clients.IndexOf(client)]++;
+                                sendedReactionsInCycle[inviteLinks.IndexOf(inviteLink)]++;
+                                sendedReactionsInGroup[inviteLinks.IndexOf(inviteLink)]++;
                                 count++;
                                 await Task.Delay(delay);
                             }
@@ -463,17 +435,84 @@ namespace ChatBot.Core
                         }
                         else
                             countOfMessages++;
-
+                        reactorsId.Clear();
+                    }
                 }
-             }
-            clientsStatus[clients.IndexOf(client)] = true;   
+                catch { }
+            }
+            clientsStatus[clients.IndexOf(client)] = true;
         }
 
-        private async Task SendReactionToMessageAsync(Client client, int delay, Reaction reaction, MessageBase message, int countOfMessages)
+        private async Task<Reaction> CheckReactions(Client client, string reactionEmoji)
+        {
+            InputChannel inputChannel = null;
+            try
+            {
+                inputChannel = new InputChannel(inputPeers[clients.IndexOf(client)].channel_id, inputPeers[clients.IndexOf(client)].access_hash);
+            }
+            catch
+            {
+                MainInfoLoger.Log($"Не удалось получить группу, возможно юзер {client.User.phone} забанен");
+                return null;
+            }
+            if (all_emoji == null)
+            {
+                try
+                {
+                    all_emoji = await client.Messages_GetAvailableReactions();
+                }
+                catch
+                {
+                    all_emoji = null;
+                }
+            }
+            try {
+                var fullChannel = await client.Channels_GetFullChannel(inputChannel);
+                if (fullChannel.full_chat.AvailableReactions is ChatReactionsSome some)
+                {
+                    _reaction = some.reactions[1];
+                }
+                else if (fullChannel.full_chat.AvailableReactions is ChatReactionsAll all)
+                {
+                    if (all.flags.HasFlag(ChatReactionsAll.Flags.allow_custom) && client.User.flags.HasFlag(TL.User.Flags.premium))
+                    {
+                        _reaction = new ReactionCustomEmoji { document_id = 5190875290439525089 };
+                    }
+                    else
+                    {
+                        try
+                        {
+                            _reaction = new ReactionEmoji
+                            {
+                                emoticon = all_emoji.reactions.FirstOrDefault(r => r.reaction == reactionEmoji).reaction.ToString()
+                            };
+                        }
+                        catch
+                        {
+                            _loger.LogAction($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
+                            MainInfoLoger.Log($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
+                            _reaction = new ReactionEmoji
+                            {
+                                emoticon = all_emoji.reactions[0].reaction
+                            };
+                        }
+                    }
+                }
+                else
+                {
+                    _reaction = null;
+                }
+
+                return _reaction;
+            }
+            catch { return null; }
+            }
+
+        private async Task SendReactionToMessageAsync(Client client, int delay, MessageBase message, int countOfMessages)
         {
             try
             {
-                await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { reaction }); 
+                await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { _reaction }); 
                 _loger.LogAction($"Ставим реакцию {reactionsSended}");
             }
             catch (Exception e)
@@ -481,20 +520,29 @@ namespace ChatBot.Core
                 if (e.Message.Contains("FLOOD"))
                 {
                     var floodWait = GetFloodWait();
-                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
-                    MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
-
-                    isFloodWait[clients.IndexOf(client)] = floodWait;
-                    await Task.Delay(floodWait * 1000);
-                    isFloodWait[clients.IndexOf(client)] = 0;
-
-                    await SendReactionToMessageAsync(client, delay, reaction, message, countOfMessages);
+                    if (floodWait != 0)
+                    {
+                        _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
+                        MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
+                        isFloodWait[clients.IndexOf(client)] = floodWait;
+                        await Task.Delay(floodWait * 1000);
+                        isFloodWait[clients.IndexOf(client)] = 0;
+                        await SendReactionToMessageAsync(client, delay, message, countOfMessages);
+                    }
                 }
 
-                else if (e.Message.Contains("MESSAGE"))
+                else
                 {
-                    countOfMessages++;
+                    MainInfoLoger.Log($"Реакция недоступна, проверка на доступные реакции");
+                    _reaction = await CheckReactions(client, _emoji);
+                    if (_reaction == null)
+                    {
+                        MainInfoLoger.Log($"В группе запрещены реакции");
+                        return;
+                    }
+                    await SendReactionToMessageAsync(client, delay, message, countOfMessages);
                 }
+
                 _loger.LogAction(e.Message);
             }
         }
