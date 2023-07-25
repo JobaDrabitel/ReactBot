@@ -251,6 +251,7 @@ namespace ChatBot.Core
 
         private async Task<bool> GetChannel(Client client, string inviteLink)
         {
+            string[] groupName = inviteLink.Split('/');
             _loger.LogAction($"Вступает в чат: {client.UserId}");
 
             if (inputPeers[clients.IndexOf(client)] == null)
@@ -273,7 +274,17 @@ namespace ChatBot.Core
                     else
                         try
                         {
-                            chat = await client.AnalyzeInviteLink(inviteLink, true);
+                            var test = await client.Contacts_Search(inviteLink);
+                            chat = test.chats.Values.ToList().FirstOrDefault(x => x.MainUsername == groupName.Last());
+                            try
+                            {
+                                await client.Channels_JoinChannel((Channel)chat);
+                            }
+                            catch (Exception exc)
+                            {
+                                chat = await client.AnalyzeInviteLink(inviteLink);
+                                _loger.LogAction($"{exc}");
+                            }
                         }
                         catch (RpcException ex)
                         {
@@ -293,7 +304,17 @@ namespace ChatBot.Core
                         }
                         catch (Exception ex)
                         {
-                            chat = await client.AnalyzeInviteLink(inviteLink);
+                            var test = await client.Contacts_Search(inviteLink);
+                            chat = test.chats.Values.ToList().FirstOrDefault(x => x.MainUsername == groupName.Last());
+                            try
+                            {
+                                await client.Channels_JoinChannel((Channel)chat);
+                            }
+                            catch (Exception exc)
+                            {
+                                chat = await client.AnalyzeInviteLink(inviteLink);
+                                _loger.LogAction($"{exc}");
+                            }
                             if (IsForbidden(client, ex))
                                 return false;
                         }
@@ -310,8 +331,8 @@ namespace ChatBot.Core
                 }
                 catch (Exception ex)
                 {
-                    if (IsForbidden(client, ex))
-                        return false;
+                    IsForbidden(client, ex);
+                    return false;
                 }
             }
 
@@ -531,7 +552,11 @@ namespace ChatBot.Core
                         await SendReactionToMessageAsync(client, delay, message, countOfMessages);
                     }
                 }
-
+                if (e.Message.Contains("FORBIDDEN"))
+                {
+                    IsForbidden(client, e);
+                    return;
+                }
                 else
                 {
                     MainInfoLoger.Log($"Реакция недоступна, проверка на доступные реакции");
