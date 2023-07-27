@@ -260,7 +260,7 @@ namespace ChatBot.Core
                 {
                     if (inviteLink.Contains("+"))
                     {
-                        Regex regex = new Regex(@"\+([A-Za-z0-9\-]+)");
+                        Regex regex = new Regex(@"\+([A-Za-z0-9\-_]+)");
                         Match match = regex.Match(inviteLink);
                         if (match.Success)
                         {
@@ -280,11 +280,14 @@ namespace ChatBot.Core
                             if (ex.Message.Contains("FLOOD"))
                             {
                                 var floodWait = GetFloodWait();
-                                _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
-                                MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
-                                isFloodWait[clients.IndexOf(client)] = floodWait;
-                                await Task.Delay(floodWait * 1000);
-                                isFloodWait[clients.IndexOf(client)] = 0;
+                                if (floodWait > 0)
+                                {
+                                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
+                                    MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
+                                    isFloodWait[clients.IndexOf(client)] = floodWait;
+                                    await Task.Delay(floodWait * 1000);
+                                    isFloodWait[clients.IndexOf(client)] = 0;
+                                }
                             }
                             if (IsForbidden(client, ex))
                                 return false;
@@ -381,9 +384,15 @@ namespace ChatBot.Core
                 try
                 {
                     var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 100);
-
+                    if (messages.Messages.Length == 0)
+                    {
+                        isBanned[clients.IndexOf(client)] = true;
+                        clientsStatus[clients.IndexOf(client)] = true;
+                        return;
+                    }
                     foreach (var messageBase in messages.Messages)
                     {
+                        
                         if (messageBase is MessageService messageService)
                             continue;
                         if (messageBase is Message message)
