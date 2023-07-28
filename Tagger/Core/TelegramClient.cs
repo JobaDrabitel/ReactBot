@@ -261,7 +261,7 @@ namespace ChatBot.Core
                 {
                     if (inviteLink.Contains("+"))
                     {
-                        Regex regex = new Regex(@"\+([A-Za-z0-9\-]+)");
+                        Regex regex = new Regex(@"\+([A-Za-z0-9\-_]+)");
                         Match match = regex.Match(inviteLink);
                         if (match.Success)
                         {
@@ -274,11 +274,9 @@ namespace ChatBot.Core
                     else
                         try
                         {
-                            var test = await client.Contacts_Search(inviteLink);
-                            chat = test.chats.Values.ToList().FirstOrDefault(x => x.MainUsername == groupName.Last());
                             try
                             {
-                                await client.Channels_JoinChannel((Channel)chat);
+                                chat = await client.AnalyzeInviteLink(inviteLink, true);
                             }
                             catch (Exception exc)
                             {
@@ -304,11 +302,9 @@ namespace ChatBot.Core
                         }
                         catch (Exception ex)
                         {
-                            var test = await client.Contacts_Search(inviteLink);
-                            chat = test.chats.Values.ToList().FirstOrDefault(x => x.MainUsername == groupName.Last());
                             try
                             {
-                                await client.Channels_JoinChannel((Channel)chat);
+                                chat = await client.AnalyzeInviteLink(inviteLink, true);
                             }
                             catch (Exception exc)
                             {
