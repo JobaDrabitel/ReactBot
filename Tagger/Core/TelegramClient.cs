@@ -335,7 +335,8 @@ namespace ChatBot.Core
                     return false;
                 }
             }
-
+            if (inputPeers[clients.IndexOf(client)] == null)
+                return false;
             _loger.LogAction($"Получаем чат...");
             return true;
         }
@@ -402,7 +403,12 @@ namespace ChatBot.Core
                 try
                 {
                     var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 100);
-
+                    if (messages.Messages.Count() == 0)
+                    {
+                        clientsStatus[clients.IndexOf(client)] = true;
+                        isBanned[clients.IndexOf(client)] = true;
+                        return;
+                    }
                     foreach (var messageBase in messages.Messages)
                     {
                         if (messageBase is MessageService messageService)
@@ -454,14 +460,13 @@ namespace ChatBot.Core
                                 }
                             }
                         }
-                        else
-                            countOfMessages++;
                         reactorsId.Clear();
                     }
                 }
                 catch { }
             }
             clientsStatus[clients.IndexOf(client)] = true;
+            isBanned[clients.IndexOf(client)] = true;
         }
 
         private async Task<Reaction> CheckReactions(Client client, string reactionEmoji)

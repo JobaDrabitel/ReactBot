@@ -606,14 +606,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Tagger.exe" size="95712">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Tagger.exe" size="96224">
       <assemblyIdentity name="Tagger" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>TdSLbMAUXqyWFQG04WKfG+k3ByXC7wOeoBEdGPvMZeA=</dsig:DigestValue>
+        <dsig:DigestValue>si3PMNvNhb+3ypKVfcsGJVJ5U0mWpUSdxRuW2thK1iI=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
