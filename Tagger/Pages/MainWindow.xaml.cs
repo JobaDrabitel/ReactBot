@@ -252,19 +252,36 @@ namespace Tagger
 
             foreach (string link in links)
             {
-                if (!LinksLB.Items.Contains(link))
+                string formattedLink = FormatTelegramLink(link);
+
+                if (!string.IsNullOrEmpty(formattedLink))
                 {
-                    LinksLB.Items.Add(link);
-                    TelegramClient.inviteLinks.Add(link);
-                }
-                else
-                {
-                    MessageBox.Show("Такая ссылка уже добавлена");
+                    if (!LinksLB.Items.Contains(formattedLink))
+                    {
+                        LinksLB.Items.Add(formattedLink);
+                        TelegramClient.inviteLinks.Add(formattedLink);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Такая ссылка уже добавлена");
+                    }
                 }
             }
 
             GroupInviteLinkTB.Clear();
         }
+
+        private string FormatTelegramLink(string link)
+        {
+            if (link.StartsWith("@"))
+            {
+                string chatUsername = link.TrimStart('@');
+                return "https://t.me/" + chatUsername;
+            }
+
+            return link;
+        }
+
         private void LinksLB_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (LinksLB.SelectedItem != null)

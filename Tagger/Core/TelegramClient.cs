@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Tagger.Core.ViewModels;
 using System.IO.Packaging;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ChatBot.Core
 {
@@ -278,6 +279,23 @@ namespace ChatBot.Core
                             {
                                 chat = await client.AnalyzeInviteLink(inviteLink, true);
                             }
+                           
+                            catch (RpcException ex)
+                            {
+                                if (ex.Message.Contains("FLOOD"))
+                                {
+                                    var floodWait = GetFloodWait();
+                                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
+                                    MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
+                                    isFloodWait[clients.IndexOf(client)] = floodWait;
+                                    await Task.Delay(floodWait * 1000);
+                                    isFloodWait[clients.IndexOf(client)] = 0;
+                                }
+                                if (IsForbidden(client, ex))
+                                    return false;
+
+                                return false;
+                            }
                             catch (Exception exc)
                             {
                                 chat = await client.AnalyzeInviteLink(inviteLink);
@@ -467,6 +485,7 @@ namespace ChatBot.Core
 
         private async Task<Reaction> CheckReactions(Client client, string reactionEmoji)
         {
+            Random random = new Random();
             InputChannel inputChannel = null;
             try
             {
@@ -497,9 +516,12 @@ namespace ChatBot.Core
                 }
                 else if (fullChannel.full_chat.AvailableReactions is ChatReactionsAll all)
                 {
+                    if (reactionEmoji.IsNullOrEmpty())
+                        reactionEmoji = all_emoji.reactions[random.Next(all_emoji.reactions.Length - 1)].reaction;
                     if (all.flags.HasFlag(ChatReactionsAll.Flags.allow_custom) && client.User.flags.HasFlag(TL.User.Flags.premium))
                     {
-                        _reaction = new ReactionCustomEmoji { document_id = 5190875290439525089 };
+                        var reactList = await client.Messages_SearchCustomEmoji(reactionEmoji);
+                        _reaction = new ReactionCustomEmoji { document_id = reactList.document_id[random.Next(0, reactList.document_id.Length-1)] };
                     }
                     else
                     {
