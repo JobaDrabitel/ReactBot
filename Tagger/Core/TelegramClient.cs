@@ -234,6 +234,7 @@ namespace ChatBot.Core
             {
                 isBanned[clients.IndexOf(client)] = true;
                 _loger.LogAction(rpcex.Message);
+                MainInfoLoger.Log($"{client.User.phone} забанен или находится в спам-блоке");
                 return true;
             }
             else if (rpcex.Message.ToUpper().Contains("BAN"))
@@ -302,9 +303,9 @@ namespace ChatBot.Core
                                         }
                                         else
                                         {
-                                            _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{300}");
-                                            MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{300}");
-                                            await Task.Delay(300 * 1000);
+                                            _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{100}");
+                                            MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{100}");
+                                            await Task.Delay(100 * 1000);
                                         }
                                     }
                                     if (IsForbidden(client, ex))
@@ -328,9 +329,9 @@ namespace ChatBot.Core
                                     }
                                     else
                                     {
-                                        _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{300}");
-                                        MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{300}");
-                                        await Task.Delay(300 * 1000);
+                                        _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{100}");
+                                        MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{100}");
+                                        await Task.Delay(100 * 1000);
                                     }
                                 }
                                 if (IsForbidden(client, exc))
@@ -355,9 +356,9 @@ namespace ChatBot.Core
                                 }
                                 else
                                 {
-                                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{300}");
-                                    MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{300}");
-                                    await Task.Delay(300 * 1000);
+                                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{100}");
+                                    MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{100}");
+                                    await Task.Delay(100 * 1000);
                                 }
                             }
                             if (IsForbidden(client, ex))
@@ -394,9 +395,9 @@ namespace ChatBot.Core
                                         }
                                         else
                                         {
-                                            _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{300}");
-                                            MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{300}");
-                                            await Task.Delay(300 * 1000);
+                                            _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{100}");
+                                            MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{100}");
+                                            await Task.Delay(100 * 1000);
                                         }
                                     }
                                     if (IsForbidden(client, exc))
@@ -506,8 +507,10 @@ namespace ChatBot.Core
             }
             for (int i = 0; i < countOfMessages; i += 100)
             {
+                if (isBanned[clients.IndexOf(client)])
+                    break;
                 try
-                {
+                    {
                     var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 100);
                     if (messages.Messages.Count() == 0)
                     {
@@ -517,7 +520,9 @@ namespace ChatBot.Core
                     }
                     foreach (var messageBase in messages.Messages)
                     {
-                        if (messageBase is MessageService messageService || messageBase.From == null)
+                        if (isBanned[clients.IndexOf(client)])
+                            break;
+                        if (messageBase is MessageService messageService || messageBase.From == null || messageBase.From is PeerChannel peerChannel)
                             continue;
                         if (messageBase is Message message)
                             if (message.reactions != null && message.reactions.recent_reactions != null)
@@ -569,7 +574,18 @@ namespace ChatBot.Core
                         reactorsId.Clear();
                     }
                 }
-                catch { }
+                catch (RpcException rex)
+                {
+                    var floodWait = GetFloodWait();
+                    if (floodWait != 0)
+                    {
+                        _loger.LogAction($"Пользователь долго не отвечает. Флудвейт на {floodWait} секунд");
+                        MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
+                        isFloodWait[clients.IndexOf(client)] = floodWait;
+                        await Task.Delay(floodWait * 1000);
+                        isFloodWait[clients.IndexOf(client)] = 0;
+                    }
+                }
             }
             clientsStatus[clients.IndexOf(client)] = true;
             isBanned[clients.IndexOf(client)] = true;
@@ -728,6 +744,11 @@ namespace ChatBot.Core
                 MessageBox.Show("Возникла ошибка изменения юзернейма, возможно, ваш вариант занят или были использованы некорректные символы");
             }
             await Task.Delay(1000);
+        }
+        public static async Task SkipGroup()
+        {
+            foreach (var client in clients)
+                isBanned[clients.IndexOf(client)] = true;
         }
     }
 }

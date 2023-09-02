@@ -42,7 +42,9 @@
                             </Grid.RowDefinitions>
 
                             <ListBox Margin="5,5,5,5" Name="LinksLB" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="LinksLB_MouseDoubleClick"/>
+                            
                         </Grid>
+                        
                         <Grid Grid.Column="1">
                             <StackPanel Grid.Row="0" Margin="0,0,0,-78">
                                 <Label Content="Ссылка на группу:"/>
@@ -54,23 +56,26 @@
                                         <ColumnDefinition Width="0.25*"></ColumnDefinition>
                                     </Grid.ColumnDefinitions>
 
-                                    <TextBox Margin="5" Name="GroupInviteLinkTB" Width="280"  AcceptsReturn="True" Height="25"/>
+                                    <TextBox Margin="7" Name="GroupInviteLinkTB" Width="280"  AcceptsReturn="True" Height="25"/>
                                     <Button x:Name="AddLink"  Margin="5" Grid.Column="1" Click="AddLink_Click">Добавить</Button>
                                 </Grid>
 
                                 <Label Content="Количество сообщений:"/>
-                                <TextBox Text="1000" Margin="10" Name="MessagesCountTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
+                                <TextBox Text="1000" Margin="7" Name="MessagesCountTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
                                 <Label Content="Задержка (мс):"/>
-                                <TextBox Text="1000" Margin="10" Name="timeDelayTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
+                                <TextBox Text="1000" Margin="7" Name="timeDelayTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
                                 <Label Content="Обычный эмодзи:"/>
-                                <ComboBox Name="EmojiCB" Width="350" HorizontalAlignment="Left" Margin="10">
+                                <ComboBox Name="EmojiCB" Width="350" HorizontalAlignment="Left" Margin="7">
                                 </ComboBox>
                                 <Label Content="Вставить свой:"/>
-                                <TextBox Margin="10" Name="emojiTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
+                                <TextBox Margin="7" Name="emojiTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
+                                <Button Name="LeaveGroupButton" Height="30" Click="LeaveGroupButton_Click">Выйти из группы</Button>
                             </StackPanel>
                         </Grid>
 
                         <StackPanel Grid.Row="1"  VerticalAlignment="Center">
+                            <Button Width="50"
+                                    Height="30" HorizontalAlignment="Right" Click="CopyButton_Click">Copy</Button>
                             <Button Width="300"
                                     Height="30" Click="StartButtonClick"
                                     Content="Запуск" Margin="5" VerticalAlignment="Bottom"/>

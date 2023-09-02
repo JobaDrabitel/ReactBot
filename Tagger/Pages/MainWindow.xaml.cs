@@ -330,5 +330,19 @@ namespace Tagger
             }
         }
 
+        private void CopyButton_Click(object sender, RoutedEventArgs e)
+        {
+            string allText = string.Join(Environment.NewLine, LinksLB.Items.OfType<string>());
+            if (!string.IsNullOrEmpty(allText))
+            {
+                Clipboard.SetText(allText);
+            }
+        }
+
+        private async void LeaveGroupButton_Click(object sender, RoutedEventArgs e)
+        {
+            MainInfoLoger.Log("Текущая группа пропускается");
+            await TelegramClient.SkipGroup();
+        }
     }
 }
