@@ -31,6 +31,7 @@ namespace ChatBot.Core
         public static List<int> isFloodWait = new List<int>();
         private List<InputPeerChannel> inputPeers = new List<InputPeerChannel>();
         static string _emoji;
+        static int currentCicle = 0;
         static Reaction _reaction;
         private bool isComplete = false;
         public static Messages_AvailableReactions all_emoji;
@@ -42,6 +43,7 @@ namespace ChatBot.Core
         public static int endedIteration = 0;
         public static List<Task> tasks = new List<Task>();
         public static List<int> sendedReactions = new List<int>();
+        public static List <int> lastMessageInGroup = new List<int>();
         public static List<int> sendedReactionsInGroup = new List<int>();
         public static List<int> sendedReactionsInCycle = new List<int>();
         public static IDictionary<long, User> Users = new Dictionary<long, User>();
@@ -84,6 +86,7 @@ namespace ChatBot.Core
                 }
             }
 
+
             if (sendedReactionsInCycle.Count == 0)
                 for (int i = 0; i < inviteLinks.Count; i++)
                     sendedReactionsInCycle.Add(0);
@@ -109,7 +112,6 @@ namespace ChatBot.Core
                     if (clientsStatus[i] && clients[i].User != null && !isBanned[i])
                     {
                         Client client = clients[i];
-                        _loger.LogAction($"Начата рассылка: {client.User.username} в {inviteLink}");
 
                         await Task.Run(async () =>
                         {
@@ -140,7 +142,6 @@ namespace ChatBot.Core
             bots.Clear();
             isBanned.Clear();
 
-            _loger.LogAction($"Отправка закончена в канал {inviteLink}");
             MainInfoLoger.Log($"Отправка закончена в канал {inviteLink}");
             await Task.Delay(timeDelay);
 
@@ -148,6 +149,8 @@ namespace ChatBot.Core
             {
                 if (currentGroup == inviteLinks.Count - 1)
                 {
+                    currentCicle++;
+                    MainInfoLoger.Log($"Закончен {currentCicle} круг групп");
                     sendedReactionsInCycle.Clear();
                     endedIteration++;
                     currentGroup = 0;
@@ -185,11 +188,9 @@ namespace ChatBot.Core
                     Password = proxies.password
                 };
             }
-            _loger.LogAction($"Получение пользователя: {item.phone}");
             Client thisClient = GetUserProxy(item.phone, client, item);
             if (thisClient != null)
             {
-                _loger.LogAction($"Авторизация пользователя: {item.phone}");
                 try
                 {
                     if (thisClient.User == null)
@@ -212,7 +213,6 @@ namespace ChatBot.Core
             try
             {
                 var client = new Client(what => GetConfig(what, bot));
-                _loger.LogAction($"Подключение пользователя к прокси: {sessionPathname}");
                 if (proxy == null)
                     return client;
                 client.TcpHandler = async (address, port) =>
@@ -233,19 +233,16 @@ namespace ChatBot.Core
             if (rpcex.Message.ToUpper().Contains("FORBIDDEN") || rpcex.Message.ToUpper().Contains("PRIVATE"))
             {
                 isBanned[clients.IndexOf(client)] = true;
-                _loger.LogAction(rpcex.Message);
                 MainInfoLoger.Log($"{client.User.phone} забанен или находится в спам-блоке");
                 return true;
             }
             else if (rpcex.Message.ToUpper().Contains("BAN"))
             {
                 isBanned[clients.IndexOf(client)] = true;
-                _loger.LogAction(rpcex.Message);
                 MainInfoLoger.Log($"{client.User.phone} забанен или находится в спам-блоке");
                 return true;
             }
 
-            _loger.LogAction(rpcex.Message);
             isBanned[clients.IndexOf(client)] = true;
 
             return false;
@@ -254,7 +251,6 @@ namespace ChatBot.Core
         private async Task<bool> GetChannel(Client client, string inviteLink)
         {
             string[] groupName = inviteLink.Split('/');
-            _loger.LogAction($"Вступает в чат: {client.UserId}");
 
             if (inputPeers[clients.IndexOf(client)] == null)
             {
@@ -268,9 +264,25 @@ namespace ChatBot.Core
                         if (match.Success)
                         {
                             string hash = match.Groups[1].Value;
-                            await client.Messages_ImportChatInvite(hash);
-                            var chatInvite = (ChatInviteAlready)await client.Messages_CheckChatInvite(hash);
-                            chat = chatInvite.chat;
+                            try
+                            {
+                                await client.Messages_ImportChatInvite(hash);
+                            }
+                            catch (RpcException rpcex) 
+                            {
+                                if (rpcex.Message.ToUpper().Contains("ALREADY") || rpcex.Message.ToUpper().Contains("PARTIPICANT"))
+                                {
+                                    var chatInvite = (ChatInviteAlready)await client.Messages_CheckChatInvite(hash);
+                                    chat = chatInvite.chat;
+                                }
+                                else
+                                {
+                                    IsForbidden(client, rpcex);
+                                    return false;
+                                }
+                               
+                            }
+                            
                         }
                     }
                     else
@@ -295,7 +307,6 @@ namespace ChatBot.Core
                                         var floodWait = GetFloodWait();
                                         if (floodWait > 0)
                                         {
-                                            _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
                                             MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
                                             isFloodWait[clients.IndexOf(client)] = floodWait;
                                             await Task.Delay(floodWait * 1000);
@@ -303,7 +314,6 @@ namespace ChatBot.Core
                                         }
                                         else
                                         {
-                                            _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{100}");
                                             MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{100}");
                                             await Task.Delay(100 * 1000);
                                         }
@@ -311,7 +321,6 @@ namespace ChatBot.Core
                                     if (IsForbidden(client, ex))
                                         return false;
                                     chat = await client.AnalyzeInviteLink(inviteLink);
-                                    _loger.LogAction($"{ex}");
                                 }
                             }
                             catch (Exception exc)
@@ -321,7 +330,6 @@ namespace ChatBot.Core
                                     var floodWait = GetFloodWait();
                                     if (floodWait > 0)
                                     {
-                                        _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
                                         MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
                                         isFloodWait[clients.IndexOf(client)] = floodWait;
                                         await Task.Delay(floodWait * 1000);
@@ -329,7 +337,6 @@ namespace ChatBot.Core
                                     }
                                     else
                                     {
-                                        _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{100}");
                                         MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{100}");
                                         await Task.Delay(100 * 1000);
                                     }
@@ -337,7 +344,6 @@ namespace ChatBot.Core
                                 if (IsForbidden(client, exc))
                                     return false;
                                 chat = await client.AnalyzeInviteLink(inviteLink);
-                                _loger.LogAction($"{exc}");
 
                             }
                         }
@@ -348,7 +354,6 @@ namespace ChatBot.Core
                                 var floodWait = GetFloodWait();
                                 if (floodWait > 0)
                                 {
-                                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
                                     MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
                                     isFloodWait[clients.IndexOf(client)] = floodWait;
                                     await Task.Delay(floodWait * 1000);
@@ -356,7 +361,6 @@ namespace ChatBot.Core
                                 }
                                 else
                                 {
-                                    _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{100}");
                                     MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{100}");
                                     await Task.Delay(100 * 1000);
                                 }
@@ -370,6 +374,10 @@ namespace ChatBot.Core
                         {
                             var test = await client.Contacts_Search(inviteLink);
                             chat = test.chats.Values.ToList().FirstOrDefault(x => x.MainUsername == groupName.Last());
+                            var c = (Channel)chat;
+                            var cf = await client.Channels_GetFullChannel((InputChannel)c);
+                            var chanfull = (ChannelFull)cf.full_chat;
+                            var chats = new InputPeerChat(chanfull.linked_chat_id);
                             try
                             {
                                 await client.Channels_JoinChannel((Channel)chat);
@@ -387,7 +395,6 @@ namespace ChatBot.Core
                                         var floodWait = GetFloodWait();
                                         if (floodWait > 0)
                                         {
-                                            _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
                                             MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
                                             isFloodWait[clients.IndexOf(client)] = floodWait;
                                             await Task.Delay(floodWait * 1000);
@@ -395,7 +402,6 @@ namespace ChatBot.Core
                                         }
                                         else
                                         {
-                                            _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{100}");
                                             MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{100}");
                                             await Task.Delay(100 * 1000);
                                         }
@@ -405,7 +411,6 @@ namespace ChatBot.Core
                                     try
                                     {
                                         chat = await client.AnalyzeInviteLink(inviteLink, true);
-                                        _loger.LogAction($"{exc}");
                                     }
                                     catch { return false; }
                                 }
@@ -418,7 +423,6 @@ namespace ChatBot.Core
                                 }
                                 catch
                                 {
-                                    _loger.LogAction($"{exc}");
                                     return false;
                                 }
                             } 
@@ -438,19 +442,20 @@ namespace ChatBot.Core
                 }
                 catch (Exception ex)
                 {
+                    var wait = GetFloodWait();
+                    if (wait != 0)
+                        MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{wait}");
                     IsForbidden(client, ex);
                     return false;
                 }
             }
             if (inputPeers[clients.IndexOf(client)] == null)
                 return false;
-            _loger.LogAction($"Получаем чат...");
             return true;
         }
 
         static string GetConfig(string what, Bots client)
         {
-            _loger.LogAction($"Получаем конфиг: {what}");
             switch (what)
             {
                 case "session_key": return client.api_hash;
@@ -511,7 +516,8 @@ namespace ChatBot.Core
                     break;
                 try
                     {
-                    var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: i, limit: 100);
+                    var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: lastMessageInGroup[inviteLinks.IndexOf(inviteLink)], limit: 100);
+                    
                     if (messages.Messages.Count() == 0)
                     {
                         clientsStatus[clients.IndexOf(client)] = true;
@@ -546,9 +552,7 @@ namespace ChatBot.Core
 
                             if (completedTask == longRunningTask)
                             {
-                                _loger.LogAction($"Отправка сообщения закончена");
-                                _loger.LogAction($"Время {stopwatch.Elapsed}");
-                                _loger.LogAction($"Клиент: {client.User.phone}");
+                                lastMessageInGroup[inviteLinks.IndexOf(inviteLink)]++;
                                 reactionsSended++;
                                 sendedReactions[clients.IndexOf(client)]++;
                                 sendedReactionsInCycle[inviteLinks.IndexOf(inviteLink)]++;
@@ -558,12 +562,9 @@ namespace ChatBot.Core
                             }
                             else
                             {
-                                _loger.LogAction($"Реакция не отправилась за 5 секунд");
-                                _loger.LogAction($"Клиент: {client.User.phone}");
                                 var floodWait = GetFloodWait();
                                 if (floodWait != 0)
                                 {
-                                    _loger.LogAction($"Пользователь долго не отвечает. Флудвейт на {floodWait} секунд");
                                     MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
                                     isFloodWait[clients.IndexOf(client)] = floodWait;
                                     await Task.Delay(floodWait * 1000);
@@ -579,7 +580,6 @@ namespace ChatBot.Core
                     var floodWait = GetFloodWait();
                     if (floodWait != 0)
                     {
-                        _loger.LogAction($"Пользователь долго не отвечает. Флудвейт на {floodWait} секунд");
                         MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
                         isFloodWait[clients.IndexOf(client)] = floodWait;
                         await Task.Delay(floodWait * 1000);
@@ -642,7 +642,6 @@ namespace ChatBot.Core
                         }
                         catch
                         {
-                            _loger.LogAction($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
                             MainInfoLoger.Log($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
                             _reaction = new ReactionEmoji
                             {
@@ -666,7 +665,6 @@ namespace ChatBot.Core
             try
             {
                 await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { _reaction });
-                _loger.LogAction($"Ставим реакцию {reactionsSended}");
             }
             catch (Exception e)
             {
@@ -675,7 +673,6 @@ namespace ChatBot.Core
                     var floodWait = GetFloodWait();
                     if (floodWait != 0)
                     {
-                        _loger.LogAction($"Бот: {client.User.phone} FLOOD_WAIT_{floodWait}");
                         MainInfoLoger.Log($"{client.User.phone} FLOOD_WAIT_{floodWait}");
                         isFloodWait[clients.IndexOf(client)] = floodWait;
                         await Task.Delay(floodWait * 1000);
@@ -699,8 +696,6 @@ namespace ChatBot.Core
                     }
                     await SendReactionToMessageAsync(client, delay, message, countOfMessages);
                 }
-
-                _loger.LogAction(e.Message);
             }
         }
 
@@ -716,7 +711,6 @@ namespace ChatBot.Core
                 }
                 catch
                 {
-                    _loger.LogAction($"Неверный путь до файла");
                     MessageBox.Show("Возникла ошибка изменения фотографии, возможно, путь указан неверно");
                 }
             }
@@ -740,7 +734,6 @@ namespace ChatBot.Core
             }
             catch (Exception ex)
             {
-                _loger.LogAction(ex.Message);
                 MessageBox.Show("Возникла ошибка изменения юзернейма, возможно, ваш вариант занят или были использованы некорректные символы");
             }
             await Task.Delay(1000);

@@ -61,6 +61,8 @@ namespace Tagger
                 if (selectedItem!= null)
                     emojiTB.Text = selectedItem;
                 TelegramClient client = new TelegramClient();
+                foreach (var link in TelegramClient.inviteLinks)
+                    TelegramClient.lastMessageInGroup.Add(0);
                 await Task.Run(async () =>
                     Application.Current.Dispatcher.Invoke(async () =>
                         await client.Start(TelegramClient.inviteLinks[0], Convert.ToInt32(MessagesCountTB.Text), Convert.ToInt32(timeDelayTB.Text), emojiTB.Text)
@@ -96,7 +98,6 @@ namespace Tagger
                     _context.SaveChanges();
                 }
 
-                _loger.LogAction($"Добавлен бот: {PhoneBotTB.Text}");
 
                 BotsListRefresh();
             }
@@ -120,7 +121,6 @@ namespace Tagger
             _context.Proxies.AddOrUpdate(proxies);
             _context.SaveChanges();
 
-            _loger.LogAction($"Добавлен прокси: {ProxyIPTB.Text}");
 
             ProxiesListRefresh();
         }
@@ -154,14 +154,12 @@ namespace Tagger
             ProxiesСB.ItemsSource = list;
             ProxiesLV.ItemsSource = list;
 
-            _loger.LogAction($"Списки прокси обновлены...");
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ListBoxService.ListBox = LogTextBox;
             MainInfoLoger.listBox = AccauntsTB;
-            _loger.LogAction($"Загрузка завершена");
 
             ProxiesListRefresh();
             BotsListRefresh();
@@ -172,7 +170,6 @@ namespace Tagger
             var listItem = _context.Bots.Select(x => x.phone).ToList();
             BotsLB.ItemsSource = listItem;
 
-            _loger.LogAction($"Списки ботов обновлены...");
         }
 
         private void RemoveBotButtonClick(object sender, RoutedEventArgs e)
@@ -188,7 +185,6 @@ namespace Tagger
             _context.Bots.Remove(bot);
             _context.SaveChanges();
 
-            _loger.LogAction($"Удалён бот: {PhoneBotTB.Text}");
             File.Delete(bot.phone);
             BotsListRefresh();
         }
@@ -210,7 +206,6 @@ namespace Tagger
                 APIIDTB.Text = bot.api_id.ToString();
             }
 
-            _loger.LogAction($"Выбран бот: {listBox.SelectedItem}");
         }
 
         private void RemoveProxyBtnClick(object sender, RoutedEventArgs e)
@@ -222,7 +217,6 @@ namespace Tagger
                 _context.Proxies.Remove(proxy);
                 _context.SaveChanges();
 
-                _loger.LogAction($"Удалён прокси: {ProxyIPTB.Text}");
 
                 ProxiesListRefresh();
             }
@@ -242,8 +236,6 @@ namespace Tagger
                 ProxyTypeCB.Text = proxy.type;
             }
 
-            if (listBox.SelectedItem != null)
-                _loger.LogAction($"Выбран прокси: {listBox.SelectedItem}");
         }
 
         private void AddLink_Click(object sender, RoutedEventArgs e)
