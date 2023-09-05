@@ -267,6 +267,8 @@ namespace ChatBot.Core
                             try
                             {
                                 await client.Messages_ImportChatInvite(hash);
+                                var chatInvite = (ChatInviteAlready)await client.Messages_CheckChatInvite(hash);
+                                chat = chatInvite.chat;
                             }
                             catch (RpcException rpcex) 
                             {
