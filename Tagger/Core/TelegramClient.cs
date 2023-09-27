@@ -530,7 +530,7 @@ namespace ChatBot.Core
                     {
                         if (isBanned[clients.IndexOf(client)])
                             break;
-                        if (messageBase is MessageService messageService || messageBase.From == null || messageBase.From is PeerChannel peerChannel)
+                        if (messageBase is MessageService messageService)
                             continue;
                         if (messageBase is Message message)
                             if (message.reactions != null && message.reactions.recent_reactions != null)
@@ -622,7 +622,7 @@ namespace ChatBot.Core
                 var fullChannel = await client.Channels_GetFullChannel(inputChannel);
                 if (fullChannel.full_chat.AvailableReactions is ChatReactionsSome some)
                 {
-                    _reaction = some.reactions[1];
+                    _reaction = new ReactionEmoji { emoticon = reactionEmoji };
                 }
                 else if (fullChannel.full_chat.AvailableReactions is ChatReactionsAll all)
                 {

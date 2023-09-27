@@ -5,6 +5,6 @@
     "\\Tagger\\Core",
     "\\Tagger\\Pages"
   ],
-  "SelectedNode": "\\Tagger\\Pages\\MainWindow.xaml.cs",
+  "SelectedNode": "\\Tagger\\Core\\TelegramClient.cs",
   "PreviewInSolutionExplorer": false
 }
