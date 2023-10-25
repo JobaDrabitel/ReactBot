@@ -244,8 +244,8 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="WTelegramClient, Version=3.4.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\WTelegramClient.3.4.2\lib\netstandard2.0\WTelegramClient.dll</HintPath>
+    <Reference Include="WTelegramClient, Version=3.5.7.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\WTelegramClient.3.5.7\lib\netstandard2.0\WTelegramClient.dll</HintPath>
     </Reference>
     <Reference Include="xNetStandard, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\xNetStandard.1.1.0\lib\netstandard2.0\xNetStandard.dll</HintPath>

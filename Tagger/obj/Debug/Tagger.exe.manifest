@@ -613,19 +613,19 @@
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>2iLMJCmZ8EqWhBb4q8WFF3b+q8Unp0frLrzuc1XgSbw=</dsig:DigestValue>
+        <dsig:DigestValue>jMhDNqetnX8gf7iKMP2AIIU3WxWQvzuQDMUQcZOAKS8=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="WTelegramClient.dll" size="562688">
-      <assemblyIdentity name="WTelegramClient" version="3.4.2.0" language="neutral" processorArchitecture="msil" />
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="WTelegramClient.dll" size="587264">
+      <assemblyIdentity name="WTelegramClient" version="3.5.7.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>KRvUY5vBeudSA9X/MbUEp85ZozwVHnqb76mSYjo+PwM=</dsig:DigestValue>
+        <dsig:DigestValue>sd/XxVLWY2oj4xksXI+6/lzEXXFwza9ugGN+J/sRvAU=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

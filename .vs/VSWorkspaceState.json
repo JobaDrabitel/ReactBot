@@ -2,9 +2,8 @@
   "ExpandedNodes": [
     "",
     "\\Tagger",
-    "\\Tagger\\Core",
-    "\\Tagger\\Pages"
+    "\\Tagger\\Core"
   ],
-  "SelectedNode": "\\Tagger\\Pages\\MainWindow.xaml.cs",
+  "SelectedNode": "\\ChatBot.sln",
   "PreviewInSolutionExplorer": false
 }

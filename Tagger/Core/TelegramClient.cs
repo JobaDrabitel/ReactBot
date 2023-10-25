@@ -43,7 +43,7 @@ namespace ChatBot.Core
         public static int endedIteration = 0;
         public static List<Task> tasks = new List<Task>();
         public static List<int> sendedReactions = new List<int>();
-        public static List <int> lastMessageInGroup = new List<int>();
+        public static List<int> lastMessageInGroup = new List<int>();
         public static List<int> sendedReactionsInGroup = new List<int>();
         public static List<int> sendedReactionsInCycle = new List<int>();
         public static IDictionary<long, User> Users = new Dictionary<long, User>();
@@ -505,7 +505,6 @@ namespace ChatBot.Core
         {
             List<long> reactorsId = new List<long>();
             _reaction = await CheckReactions(client, reactionEmoji);
-
             if (_reaction == null)
             {
                 isBanned[clients.IndexOf(client)] = true;
@@ -517,9 +516,8 @@ namespace ChatBot.Core
                 if (isBanned[clients.IndexOf(client)])
                     break;
                 try
-                    {
-                    var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: lastMessageInGroup[inviteLinks.IndexOf(inviteLink)], limit: 100);
-                    
+                {
+                    var messages = await client.Messages_GetHistory(inputPeers[clients.IndexOf(client)], add_offset: sendedReactionsInGroup[inviteLinks.IndexOf(inviteLink)], limit: 100);
                     if (messages.Messages.Count() == 0)
                     {
                         clientsStatus[clients.IndexOf(client)] = true;
@@ -538,7 +536,6 @@ namespace ChatBot.Core
                                     reactorsId.Add(reactors.peer_id.ID);
                         if (reactorsId.Contains(client.User.id) == false)
                         {
-
                             Stopwatch stopwatch = new Stopwatch();
                             stopwatch.Start();
                             Task longRunningTask = SendReactionToMessageAsync(client, delay, messageBase, countOfMessages);
@@ -631,7 +628,7 @@ namespace ChatBot.Core
                     if (all.flags.HasFlag(ChatReactionsAll.Flags.allow_custom) && client.User.flags.HasFlag(TL.User.Flags.premium))
                     {
                         var reactList = await client.Messages_SearchCustomEmoji(reactionEmoji);
-                        _reaction = new ReactionCustomEmoji { document_id = reactList.document_id[random.Next(0, reactList.document_id.Length-1)] };
+                        _reaction = new ReactionCustomEmoji { document_id = 5345822523474849927 };
                     }
                     else
                     {
