@@ -14,6 +14,7 @@ using System.Text.RegularExpressions;
 using Tagger.Core.ViewModels;
 using System.IO.Packaging;
 using Microsoft.IdentityModel.Tokens;
+using static Tagger.MainWindow;
 
 namespace ChatBot.Core
 {
@@ -30,9 +31,9 @@ namespace ChatBot.Core
         public static List<bool> isBanned = new List<bool>();
         public static List<int> isFloodWait = new List<int>();
         private List<InputPeerChannel> inputPeers = new List<InputPeerChannel>();
-        static string _emoji;
+        public static List<string> _emoji = new List<string>();
         static int currentCicle = 0;
-        static Reaction _reaction;
+        static List<Reaction> _reaction;
         private bool isComplete = false;
         public static Messages_AvailableReactions all_emoji;
         public static int reactionsSended = 0;
@@ -49,10 +50,37 @@ namespace ChatBot.Core
         public static IDictionary<long, User> Users = new Dictionary<long, User>();
         public static IDictionary<long, ChatBase> Chats = new Dictionary<long, ChatBase>();
         private bool isWork = false;
-
-        public async Task Start(string inviteLink, int countOfMessages, int timeDelay, string emoji)
+        private int _emojiCount;
+        public async Task Start(string inviteLink, int countOfMessages, int timeDelay, string emoji, int emojiCount)
         {
-            _emoji = emoji;
+            while (true)
+            {
+                if (!isComplete)
+                {
+                    await StartGroup(inviteLinks[currentGroup], countOfMessages, timeDelay, emoji, emojiCount);
+
+                    if (currentGroup == inviteLinks.Count - 1)
+                    {
+                        sendedReactionsInCycle.Clear();
+                        endedIteration++;
+                        currentGroup = 0;
+                    }
+                    else
+                        currentGroup++;
+
+                    endedChannels++;
+                }
+                else
+                    break;
+            }
+        }
+        public async Task StartGroup(string inviteLink, int countOfMessages, int timeDelay, string emoji, int emojiCount)
+        {
+            if (_reaction == null)
+                _reaction = new List<Reaction>();
+            _emojiCount = emojiCount;
+            if(_emoji.Count == 0)
+                _emoji = emoji.Split(' ').ToList();
             if (clients.Count == 0)
             {
                 foreach (var item in _context.Bots)
@@ -115,7 +143,7 @@ namespace ChatBot.Core
 
                         await Task.Run(async () =>
                         {
-                            _ = SendReactions(client, countOfMessages, emoji, timeDelay, inviteLink);
+                            _ = SendReactions(client, countOfMessages, _emoji, timeDelay, inviteLink, emojiCount);
                         });
 
                         clientsStatus[i] = false;
@@ -145,22 +173,7 @@ namespace ChatBot.Core
             MainInfoLoger.Log($"Отправка закончена в канал {inviteLink}");
             await Task.Delay(timeDelay);
 
-            if (!isComplete)
-            {
-                if (currentGroup == inviteLinks.Count - 1)
-                {
-                    currentCicle++;
-                    MainInfoLoger.Log($"Закончен {currentCicle} круг групп");
-                    sendedReactionsInCycle.Clear();
-                    endedIteration++;
-                    currentGroup = 0;
-                }
-                else
-                    currentGroup++;
 
-                endedChannels++;
-                await Start(inviteLinks[currentGroup], countOfMessages, timeDelay, emoji);
-            }
         }
 
 
@@ -270,7 +283,7 @@ namespace ChatBot.Core
                                 var chatInvite = (ChatInviteAlready)await client.Messages_CheckChatInvite(hash);
                                 chat = chatInvite.chat;
                             }
-                            catch (RpcException rpcex) 
+                            catch (RpcException rpcex)
                             {
                                 if (rpcex.Message.ToUpper().Contains("ALREADY") || rpcex.Message.ToUpper().Contains("PARTIPICANT"))
                                 {
@@ -282,9 +295,7 @@ namespace ChatBot.Core
                                     IsForbidden(client, rpcex);
                                     return false;
                                 }
-                               
                             }
-                            
                         }
                     }
                     else
@@ -427,7 +438,7 @@ namespace ChatBot.Core
                                 {
                                     return false;
                                 }
-                            } 
+                            }
                             if (IsForbidden(client, ex))
                                 return false;
                         }
@@ -501,7 +512,7 @@ namespace ChatBot.Core
 
             return 0;
         }
-        public async Task SendReactions(Client client, int countOfMessages, string reactionEmoji, int delay, string inviteLink)
+        public async Task SendReactions(Client client, int countOfMessages, List<string> reactionEmoji, int delay, string inviteLink, int emojiCount)
         {
             List<long> reactorsId = new List<long>();
             _reaction = await CheckReactions(client, reactionEmoji);
@@ -590,8 +601,9 @@ namespace ChatBot.Core
             isBanned[clients.IndexOf(client)] = true;
         }
 
-        private async Task<Reaction> CheckReactions(Client client, string reactionEmoji)
+        private async Task<List<Reaction>> CheckReactions(Client client, List<string> reactionEmoji)
         {
+            reactionEmoji = _emoji;
             Random random = new Random();
             InputChannel inputChannel = null;
             try
@@ -619,33 +631,39 @@ namespace ChatBot.Core
                 var fullChannel = await client.Channels_GetFullChannel(inputChannel);
                 if (fullChannel.full_chat.AvailableReactions is ChatReactionsSome some)
                 {
-                    _reaction = some.reactions[1];
+                    for (int i = 0; i < _emojiCount; i++)
+                        _reaction.Add(some.reactions[i]);
                 }
                 else if (fullChannel.full_chat.AvailableReactions is ChatReactionsAll all)
                 {
                     if (reactionEmoji.IsNullOrEmpty())
-                        reactionEmoji = all_emoji.reactions[random.Next(all_emoji.reactions.Length - 1)].reaction;
+                        reactionEmoji.Add(all_emoji.reactions[random.Next(all_emoji.reactions.Length - 1)].reaction);
                     if (all.flags.HasFlag(ChatReactionsAll.Flags.allow_custom) && client.User.flags.HasFlag(TL.User.Flags.premium))
                     {
-                        var reactList = await client.Messages_SearchCustomEmoji(reactionEmoji);
-                        _reaction = new ReactionCustomEmoji { document_id = 5345822523474849927 };
+                        foreach (var reaction in reactionEmoji)
+                        {
+                            var reactList = await client.Messages_SearchCustomEmoji(reaction);
+                            _reaction.Add(new ReactionCustomEmoji { document_id = GetDocumentId(reaction)
+						});;
+                        }
                     }
                     else
                     {
                         try
                         {
-                            _reaction = new ReactionEmoji
-                            {
-                                emoticon = all_emoji.reactions.FirstOrDefault(r => r.reaction == reactionEmoji).reaction.ToString()
-                            };
+                            foreach (var reaction in reactionEmoji)
+                                _reaction.Add(new ReactionEmoji
+                                {
+                                    emoticon = all_emoji.reactions.FirstOrDefault(r => r.reaction == reaction).reaction.ToString()
+                                });
                         }
                         catch
                         {
                             MainInfoLoger.Log($"Эмодзи {reactionEmoji} не поддерживается в текущей группе, будет выбрано одно из доступных");
-                            _reaction = new ReactionEmoji
+                            _reaction.Add(new ReactionEmoji
                             {
                                 emoticon = all_emoji.reactions[0].reaction
-                            };
+                            });
                         }
                     }
                 }
@@ -663,7 +681,7 @@ namespace ChatBot.Core
         {
             try
             {
-                await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: new[] { _reaction });
+                await client.Messages_SendReaction(inputPeers[clients.IndexOf(client)], message.ID, reaction: _reaction.ToArray());
             }
             catch (Exception e)
             {
@@ -741,6 +759,20 @@ namespace ChatBot.Core
         {
             foreach (var client in clients)
                 isBanned[clients.IndexOf(client)] = true;
+        }
+        long GetDocumentId(string emoji)
+        {
+            switch (emoji)
+            {
+                case "\U0001F609": return (long)CustomEmojies.GO;
+                case "\U0001F604": return (long)CustomEmojies.TO;
+                case "\U0001F60C": return (long)CustomEmojies.LS;
+                case "\U0001F61A": return (long)CustomEmojies.STORIS;
+                case "\U0001F61B": return (long)CustomEmojies.STORIES;
+                case "\U0001F617": return (long)CustomEmojies.INFO;
+                case "\U0001F44D": return (long)CustomEmojies.GOTOCHANNEL;
+                default: return (long)CustomEmojies.GOTOCHANNEL; // Значение по умолчанию, если нет совпадений.
+            }
         }
     }
 }

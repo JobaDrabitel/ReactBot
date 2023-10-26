@@ -64,17 +64,25 @@
                                 <TextBox Text="1000" Margin="7" Name="MessagesCountTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
                                 <Label Content="Задержка (мс):"/>
                                 <TextBox Text="1000" Margin="7" Name="timeDelayTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
+                                <StackPanel Orientation="Horizontal">
                                 <Label Content="Обычный эмодзи:"/>
-                                <ComboBox Name="EmojiCB" Width="350" HorizontalAlignment="Left" Margin="7">
+                                <ComboBox SelectedIndex="1" Name="EmojiCB" Width="87" HorizontalAlignment="Left" Margin="7">
                                 </ComboBox>
-                                <Label Content="Вставить свой:"/>
-                                <TextBox Margin="7" Name="emojiTB" Width="280"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
-                                <Button Name="LeaveGroupButton" Height="30" Click="LeaveGroupButton_Click">Выйти из группы</Button>
+                                    <Button Click="AddEmojiButton_Click" x:Name="AddEmojiButton" Height="30" Margin="20 5 0 5">Добавить</Button>
+                                </StackPanel>
+                                <TextBlock Height="30" x:Name="EmojiesText"></TextBlock>
+                                <StackPanel Orientation="Horizontal">
+                                <Label Content="Вставить свои:"/>
+                                <TextBox Margin="7" Name="emojiTB" Width="60"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/> 
+                                <Label Content="Кол-во:"/>
+                                <TextBox Text="0" Margin="7" Name="emojiCountTB" Width="40"  AcceptsReturn="True" Height="25" HorizontalAlignment="Left"/>
+                                </StackPanel>
+                                <Button Margin="10" Name="LeaveGroupButton" Height="30" Click="LeaveGroupButton_Click">Выйти из группы</Button>
                             </StackPanel>
                         </Grid>
 
                         <StackPanel Grid.Row="1"  VerticalAlignment="Center">
-                            <Button Width="50"
+                            <Button Width="50" Margin="5"
                                     Height="30" HorizontalAlignment="Right" Click="CopyButton_Click">Copy</Button>
                             <Button Width="300"
                                     Height="30" Click="StartButtonClick"

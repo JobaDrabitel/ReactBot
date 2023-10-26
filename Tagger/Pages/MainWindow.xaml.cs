@@ -1,4 +1,5 @@
 ﻿using ChatBot.Core;
+using Microsoft.Identity.Client;
 using Microsoft.Win32;
 using System;
 using System.Collections;
@@ -27,8 +28,17 @@ namespace Tagger
         private DataModel _context = new DataModel();
         private LogService<MainWindow> _loger = new LogService<MainWindow>();
         static StreamWriter WTelegramLogs = new StreamWriter("WTelegram.log", true, Encoding.UTF8) { AutoFlush = true };
-
-
+        public enum CustomEmojies : long
+        { 
+            GO = 5345822523474849927, 
+            TO = 5343615391321044560, 
+            LS = 5346216195882234448, 
+            STORIS = 5343885261296121898, 
+            STORIES = 5344003171033300686,
+            INFO = 5346040626209108382,
+			GOTOCHANNEL = 5260225573317262863, 
+        }
+ 
         private ObservableCollection<UserData> users { get; set; } = new ObservableCollection<UserData>();
 
         public MainWindow()
@@ -36,23 +46,21 @@ namespace Tagger
             InitializeComponent();
             WTelegram.Helpers.Log = (lvl, str) => WTelegramLogs.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{"TDIWE!"[lvl]}] {str}");
             WorkStatisticViewer.window = this;
-            EmojiCB.ItemsSource = new List<string>
-            {
-                "\U0001F389", // 🎉
-                "\U0001F600", // 😀
-                "\U0001F4A9", // 💩
-                "\U0001F525", // 🔥
-                "\U0001F44D", // 👍
-                "\U0001F60D", // 😍
-                "\U0001F496", // 💖
-                "\U0001F4A1", // 💡
-                "\U0001F60E", // 😎
-                "\U0001F4AA"  // 💪
-            };
+			EmojiCB.ItemsSource = new List<string>
+{
+	"\U0001F609", // 😉
+    "\U0001F604", // 😄
+    "\U0001F60C", // 😌
+    "\U0001F61A", // 😚
+    "\U0001F61B", // 😛
+    "\U0001F617", // 😗
+    "\U0001F44D", // 👍
+};
 
-        }
 
-        private async void StartButtonClick(object sender, RoutedEventArgs e)
+		}
+
+		private async void StartButtonClick(object sender, RoutedEventArgs e)
         {
             if (LinksLB.Items.Count != 0)
             {
@@ -65,8 +73,7 @@ namespace Tagger
                     TelegramClient.lastMessageInGroup.Add(0);
                 await Task.Run(async () =>
                     Application.Current.Dispatcher.Invoke(async () =>
-                        await client.Start(TelegramClient.inviteLinks[0], Convert.ToInt32(MessagesCountTB.Text), Convert.ToInt32(timeDelayTB.Text), emojiTB.Text)
-                    )) ;
+                        await client.Start(TelegramClient.inviteLinks[0], Convert.ToInt32(MessagesCountTB.Text), Convert.ToInt32(timeDelayTB.Text), emojiTB.Text, Convert.ToInt32(emojiCountTB.Text))));
             }
             else
                 MessageBox.Show("Добавьте ссылки для начала работы");
@@ -297,12 +304,11 @@ namespace Tagger
         private async void ChangeAccInfoButton_Click(object sender, RoutedEventArgs e)
         {
             TelegramClient telegramClient = new TelegramClient();
-            var selectedItem = BotsLB.SelectedItem; // Получаем выбранный элемент из ListBox
+            var selectedItem = BotsLB.SelectedItem;
             if (selectedItem != null)
             {
-                using (var dbContext = new DataModel()) // Замените YourDbContext на ваш класс контекста EF
+                using (var dbContext = new DataModel())
                 {
-                    // Выполняем LINQ-запрос для поиска первой записи с указанным номером телефона
                     var matchingItem = dbContext.Bots.FirstOrDefault(bot => bot.phone == selectedItem);
 
                     if (matchingItem != null)
@@ -336,5 +342,12 @@ namespace Tagger
             MainInfoLoger.Log("Текущая группа пропускается");
             await TelegramClient.SkipGroup();
         }
-    }
+
+		private void AddEmojiButton_Click(object sender, RoutedEventArgs e)
+		{
+            TelegramClient._emoji.Add(EmojiCB.SelectedItem.ToString());
+			emojiCountTB.Text = (Convert.ToInt32(emojiCountTB.Text) + 1).ToString();
+            EmojiesText.Text += EmojiCB.SelectedItem.ToString();
+		}
+	}
 }
