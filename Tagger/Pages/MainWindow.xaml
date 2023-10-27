@@ -161,12 +161,14 @@
                                 <Label Content="Username:" Grid.Column="0" HorizontalAlignment="Left"/>
                                 <Label Content="About:" Grid.Column="0" HorizontalAlignment="Left"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="1">
+                            <StackPanel Margin="0,0,0,9" Grid.RowSpan="2">
                                 <TextBox Name="UserFirstNameTB" Margin="5" HorizontalAlignment="Right"/>
                                 <TextBox Name="UserLastNameTB" Margin="5" HorizontalAlignment="Right"/>
                                 <TextBox Name="UsernameTB" Margin="5" HorizontalAlignment="Right"/>
                                 <TextBox Name="UserAboutTB" Margin="5" HorizontalAlignment="Right"/>
-                                <Button Content="Выбрать картинку" Click="OpenFileDialog_Click" Width="200" HorizontalAlignment="Left" Margin="10"/>
+                                <Button Content="Выбрать фото профиля" Click="OpenFileDialog_Click" Width="200" HorizontalAlignment="Left" Margin="10"/>
+                                <Button Content="Загрузить сторис" Click="OpenStoryFileDialog_Click" Width="200" HorizontalAlignment="Left" Margin="10"/>
+                                <TextBox Name="StoryCaptionTB" Margin="5" HorizontalAlignment="Right"/>
                                 <Button Name="ChangeAccInfoButton" Content="Изменить данные аккаунта" Width="200" Margin="25" Height="30" Click="ChangeAccInfoButton_Click"></Button>
                             </StackPanel>
                         </Grid>

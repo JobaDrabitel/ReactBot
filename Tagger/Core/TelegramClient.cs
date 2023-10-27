@@ -716,13 +716,26 @@ namespace ChatBot.Core
             }
         }
 
-        public async Task EditAccount(Client client, string filePath, string firstName, string lastName, string about, string userName)
+        public async Task EditAccount(Client client, string filePath, string firstName, string lastName, string about, string userName, string storyPath, string storyCaption)
         {
-
+            if (!string.IsNullOrEmpty(storyPath))
+			{
+				try
+				{
+					var inputFile = await client.UploadFileAsync(storyPath);
+					InputMediaUploadedPhoto inputMediaUploadedPhoto = new InputMediaUploadedPhoto() { file = inputFile };
+					await client.Stories_SendStory(new InputPeerSelf(), inputMediaUploadedPhoto, new InputPrivacyRule[] { new InputPrivacyValueAllowAll() }, WTelegram.Helpers.RandomLong(), caption: storyCaption);
+				}
+				catch
+				{
+					MessageBox.Show("Возникла ошибка изменения фотографии, возможно, путь указан неверно");
+				}
+			}
             if (!string.IsNullOrEmpty(filePath))
             {
                 try
                 {
+
                     var inputFile = await client.UploadFileAsync(filePath);
                     await client.Photos_UploadProfilePhoto(inputFile);
                 }
@@ -736,6 +749,7 @@ namespace ChatBot.Core
             lastName = lastName == "" ? null : lastName;
             about = about == "" ? null : about;
 
+            
             try
             {
 
@@ -745,7 +759,8 @@ namespace ChatBot.Core
             {
                 MessageBox.Show("Возникла ошибка изменения имени, фамилии или статуса, возможно были использованы некорректные символы");
             }
-            try
+			if (!userName.IsNullOrEmpty())
+				try
             {
                 await client.Account_UpdateUsername(userName);
             }

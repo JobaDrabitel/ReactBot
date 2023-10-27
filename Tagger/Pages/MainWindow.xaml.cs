@@ -25,6 +25,7 @@ namespace Tagger
     public partial class MainWindow : Window
     {
         string _selectedImagePath;
+        string _selectedStoryMediaPath;
         private DataModel _context = new DataModel();
         private LogService<MainWindow> _loger = new LogService<MainWindow>();
         static StreamWriter WTelegramLogs = new StreamWriter("WTelegram.log", true, Encoding.UTF8) { AutoFlush = true };
@@ -300,6 +301,16 @@ namespace Tagger
                 _selectedImagePath = openFileDialog.FileName;
             }
         }
+        private void OpenStoryFileDialog_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Изображения (*.jpg, *.png)|*.jpg;*.png|Все файлы (*.*)|*.*";
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                _selectedStoryMediaPath = openFileDialog.FileName;
+            }
+        }
 
         private async void ChangeAccInfoButton_Click(object sender, RoutedEventArgs e)
         {
@@ -316,7 +327,7 @@ namespace Tagger
                         try
                         {
                             var selectedClient = await telegramClient.CreateClient(matchingItem);
-                            await telegramClient.EditAccount(selectedClient, _selectedImagePath, UserFirstNameTB.Text, UserLastNameTB.Text, UserAboutTB.Text, UsernameTB.Text);
+                            await telegramClient.EditAccount(selectedClient, _selectedImagePath, UserFirstNameTB.Text, UserLastNameTB.Text, UserAboutTB.Text, UsernameTB.Text, _selectedStoryMediaPath, StoryCaptionTB.Text);
                         }
                         catch (Exception ex) { _loger.LogAction(ex.Message); }
                         finally
