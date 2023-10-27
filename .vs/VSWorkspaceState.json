@@ -1,6 +1,10 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Tagger",
+    "\\Tagger\\Core",
+    "\\Tagger\\Pages"
   ],
+  "SelectedNode": "\\Tagger\\Pages\\MainWindow.xaml",
   "PreviewInSolutionExplorer": false
 }

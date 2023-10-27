@@ -1,4 +1,5 @@
 ﻿using ChatBot.Core;
+using Microsoft.Identity.Client;
 using Microsoft.Win32;
 using System;
 using System.Collections;
@@ -17,7 +18,6 @@ using Tagger.Core;
 using Tagger.Core.Data;
 using Tagger.Core.Loger.LogServices;
 using Tagger.Core.ViewModels;
-using EmojiSharp;
 
 namespace Tagger
 {
@@ -25,11 +25,21 @@ namespace Tagger
     public partial class MainWindow : Window
     {
         string _selectedImagePath;
+        string _selectedStoryMediaPath;
         private DataModel _context = new DataModel();
         private LogService<MainWindow> _loger = new LogService<MainWindow>();
         static StreamWriter WTelegramLogs = new StreamWriter("WTelegram.log", true, Encoding.UTF8) { AutoFlush = true };
-
-
+        public enum CustomEmojies : long
+        { 
+            GO = 5345822523474849927, 
+            TO = 5343615391321044560, 
+            LS = 5346216195882234448, 
+            STORIS = 5343885261296121898, 
+            STORIES = 5344003171033300686,
+            INFO = 5346040626209108382,
+			GOTOCHANNEL = 5260225573317262863, 
+        }
+ 
         private ObservableCollection<UserData> users { get; set; } = new ObservableCollection<UserData>();
 
         public MainWindow()
@@ -37,23 +47,21 @@ namespace Tagger
             InitializeComponent();
             WTelegram.Helpers.Log = (lvl, str) => WTelegramLogs.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{"TDIWE!"[lvl]}] {str}");
             WorkStatisticViewer.window = this;
-            EmojiCB.ItemsSource = new List<string>
-            {
-                "\U0001F389", // 🎉
-                "\U0001F600", // 😀
-                "\U0001F4A9", // 💩
-                "\U0001F525", // 🔥
-                "\U0001F44D", // 👍
-                "\U0001F60D", // 😍
-                "\U0001F496", // 💖
-                "\U0001F4A1", // 💡
-                "\U0001F60E", // 😎
-                "\U0001F4AA"  // 💪
-            };
+			EmojiCB.ItemsSource = new List<string>
+{
+	"\U0001F609", // 😉
+    "\U0001F604", // 😄
+    "\U0001F60C", // 😌
+    "\U0001F61A", // 😚
+    "\U0001F61B", // 😛
+    "\U0001F617", // 😗
+    "\U0001F44D", // 👍
+};
 
-        }
 
-        private async void StartButtonClick(object sender, RoutedEventArgs e)
+		}
+
+		private async void StartButtonClick(object sender, RoutedEventArgs e)
         {
             if (LinksLB.Items.Count != 0)
             {
@@ -62,10 +70,11 @@ namespace Tagger
                 if (selectedItem!= null)
                     emojiTB.Text = selectedItem;
                 TelegramClient client = new TelegramClient();
+                foreach (var link in TelegramClient.inviteLinks)
+                    TelegramClient.lastMessageInGroup.Add(0);
                 await Task.Run(async () =>
                     Application.Current.Dispatcher.Invoke(async () =>
-                        await client.Start(TelegramClient.inviteLinks[0], Convert.ToInt32(MessagesCountTB.Text), Convert.ToInt32(timeDelayTB.Text), emojiTB.Text)
-                    )) ;
+                        await client.Start(TelegramClient.inviteLinks[0], Convert.ToInt32(MessagesCountTB.Text), Convert.ToInt32(timeDelayTB.Text), emojiTB.Text, Convert.ToInt32(emojiCountTB.Text))));
             }
             else
                 MessageBox.Show("Добавьте ссылки для начала работы");
@@ -97,7 +106,6 @@ namespace Tagger
                     _context.SaveChanges();
                 }
 
-                _loger.LogAction($"Добавлен бот: {PhoneBotTB.Text}");
 
                 BotsListRefresh();
             }
@@ -121,7 +129,6 @@ namespace Tagger
             _context.Proxies.AddOrUpdate(proxies);
             _context.SaveChanges();
 
-            _loger.LogAction($"Добавлен прокси: {ProxyIPTB.Text}");
 
             ProxiesListRefresh();
         }
@@ -155,14 +162,12 @@ namespace Tagger
             ProxiesСB.ItemsSource = list;
             ProxiesLV.ItemsSource = list;
 
-            _loger.LogAction($"Списки прокси обновлены...");
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ListBoxService.ListBox = LogTextBox;
             MainInfoLoger.listBox = AccauntsTB;
-            _loger.LogAction($"Загрузка завершена");
 
             ProxiesListRefresh();
             BotsListRefresh();
@@ -173,7 +178,6 @@ namespace Tagger
             var listItem = _context.Bots.Select(x => x.phone).ToList();
             BotsLB.ItemsSource = listItem;
 
-            _loger.LogAction($"Списки ботов обновлены...");
         }
 
         private void RemoveBotButtonClick(object sender, RoutedEventArgs e)
@@ -189,7 +193,6 @@ namespace Tagger
             _context.Bots.Remove(bot);
             _context.SaveChanges();
 
-            _loger.LogAction($"Удалён бот: {PhoneBotTB.Text}");
             File.Delete(bot.phone);
             BotsListRefresh();
         }
@@ -211,7 +214,6 @@ namespace Tagger
                 APIIDTB.Text = bot.api_id.ToString();
             }
 
-            _loger.LogAction($"Выбран бот: {listBox.SelectedItem}");
         }
 
         private void RemoveProxyBtnClick(object sender, RoutedEventArgs e)
@@ -223,7 +225,6 @@ namespace Tagger
                 _context.Proxies.Remove(proxy);
                 _context.SaveChanges();
 
-                _loger.LogAction($"Удалён прокси: {ProxyIPTB.Text}");
 
                 ProxiesListRefresh();
             }
@@ -243,8 +244,6 @@ namespace Tagger
                 ProxyTypeCB.Text = proxy.type;
             }
 
-            if (listBox.SelectedItem != null)
-                _loger.LogAction($"Выбран прокси: {listBox.SelectedItem}");
         }
 
         private void AddLink_Click(object sender, RoutedEventArgs e)
@@ -253,19 +252,36 @@ namespace Tagger
 
             foreach (string link in links)
             {
-                if (!LinksLB.Items.Contains(link))
+                string formattedLink = FormatTelegramLink(link);
+
+                if (!string.IsNullOrEmpty(formattedLink))
                 {
-                    LinksLB.Items.Add(link);
-                    TelegramClient.inviteLinks.Add(link);
-                }
-                else
-                {
-                    MessageBox.Show("Такая ссылка уже добавлена");
+                    if (!LinksLB.Items.Contains(formattedLink))
+                    {
+                        LinksLB.Items.Add(formattedLink);
+                        TelegramClient.inviteLinks.Add(formattedLink);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Такая ссылка уже добавлена");
+                    }
                 }
             }
 
             GroupInviteLinkTB.Clear();
         }
+
+        private string FormatTelegramLink(string link)
+        {
+            if (link.StartsWith("@"))
+            {
+                string chatUsername = link.TrimStart('@');
+                return "https://t.me/" + chatUsername;
+            }
+
+            return link;
+        }
+
         private void LinksLB_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (LinksLB.SelectedItem != null)
@@ -285,16 +301,27 @@ namespace Tagger
                 _selectedImagePath = openFileDialog.FileName;
             }
         }
+        private void OpenStoryFileDialog_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Изображения (*.jpg, *.png)|*.jpg;*.png|Все файлы (*.*)|*.*";
+			
+
+			if (openFileDialog.ShowDialog() == true)
+            {
+                _selectedStoryMediaPath = openFileDialog.FileName;
+				StoryPathLb.Text = openFileDialog.FileName;
+			}
+        }
 
         private async void ChangeAccInfoButton_Click(object sender, RoutedEventArgs e)
         {
             TelegramClient telegramClient = new TelegramClient();
-            var selectedItem = BotsLB.SelectedItem; // Получаем выбранный элемент из ListBox
+            var selectedItem = BotsLB.SelectedItem;
             if (selectedItem != null)
             {
-                using (var dbContext = new DataModel()) // Замените YourDbContext на ваш класс контекста EF
+                using (var dbContext = new DataModel())
                 {
-                    // Выполняем LINQ-запрос для поиска первой записи с указанным номером телефона
                     var matchingItem = dbContext.Bots.FirstOrDefault(bot => bot.phone == selectedItem);
 
                     if (matchingItem != null)
@@ -302,7 +329,7 @@ namespace Tagger
                         try
                         {
                             var selectedClient = await telegramClient.CreateClient(matchingItem);
-                            await telegramClient.EditAccount(selectedClient, _selectedImagePath, UserFirstNameTB.Text, UserLastNameTB.Text, UserAboutTB.Text, UsernameTB.Text);
+                            await telegramClient.EditAccount(selectedClient, _selectedImagePath, UserFirstNameTB.Text, UserLastNameTB.Text, UserAboutTB.Text, UsernameTB.Text, _selectedStoryMediaPath, StoryCaptionTB.Text);
                         }
                         catch (Exception ex) { _loger.LogAction(ex.Message); }
                         finally
@@ -314,5 +341,26 @@ namespace Tagger
             }
         }
 
-    }
+        private void CopyButton_Click(object sender, RoutedEventArgs e)
+        {
+            string allText = string.Join(Environment.NewLine, LinksLB.Items.OfType<string>());
+            if (!string.IsNullOrEmpty(allText))
+            {
+                Clipboard.SetText(allText);
+            }
+        }
+
+        private async void LeaveGroupButton_Click(object sender, RoutedEventArgs e)
+        {
+            MainInfoLoger.Log("Текущая группа пропускается");
+            await TelegramClient.SkipGroup();
+        }
+
+		private void AddEmojiButton_Click(object sender, RoutedEventArgs e)
+		{
+            TelegramClient._emoji.Add(EmojiCB.SelectedItem.ToString());
+			emojiCountTB.Text = (Convert.ToInt32(emojiCountTB.Text) + 1).ToString();
+            EmojiesText.Text += EmojiCB.SelectedItem.ToString();
+		}
+	}
 }

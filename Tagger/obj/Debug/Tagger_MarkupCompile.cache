@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\legen\Source\Repos\ReactBot\Tagger\obj\Debug\
+C:\Users\legen\source\repos\ReactBot\Tagger\obj\Debug\
 Tagger
 none
 false
 DEBUG;TRACE
-C:\Users\legen\Source\Repos\ReactBot\Tagger\App.xaml
+C:\Users\legen\source\repos\ReactBot\Tagger\App.xaml
 2-1321151802
 
-291499343962
-169-839860782
+271706039479
+169-1419605578
 Pages\MainWindow.xaml;Pages\VerificationCodeDialogPage.xaml;
 
-True
+False
 

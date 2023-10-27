@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-F:\Projects\C++\ChatBot\ChatBot\obj\Debug\net7.0-windows\
+C:\Users\legen\source\repos\ReactBot\ChatBot\obj\Debug\net7.0-windows\
 ChatBot
 none
 false
 TRACE;DEBUG;NET;NET7_0;NETCOREAPP
-F:\Projects\C++\ChatBot\ChatBot\App.xaml
+C:\Users\legen\source\repos\ReactBot\ChatBot\App.xaml
 21103879966
 
 5-566915824
-210-1662695169
+198-759771931
 Pages\DialogWindows\VerificationCodeDialogPage.xaml;Pages\MainWindow.xaml;
 
-False
+True
 

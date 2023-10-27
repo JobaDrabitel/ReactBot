@@ -28,10 +28,9 @@ namespace Tagger.Core.ViewModels
                 int g = 0;
                 while (true)
                 {
-                    if (TelegramClient.sendedMessages.Count > 0 && TelegramClient.taggedUsers.Count > 0)
+                    if (TelegramClient.sendedReactions.Count > 0)
                     {
-                        users[i].SendedMessages = TelegramClient.sendedMessages[i];
-                        users[i].TaggedUsers = TelegramClient.taggedUsers[i];
+                        users[i].SendedMessages = TelegramClient.sendedReactions[i];
 
                         GroupsDataRefresh(g);
 
@@ -60,7 +59,7 @@ namespace Tagger.Core.ViewModels
 
                     await DataRefresh();
 
-                    await Task.Delay(100);
+                    await Task.Delay(1000);
 
                     if (i == users.Count - 1)
                         i = 0;
@@ -77,12 +76,11 @@ namespace Tagger.Core.ViewModels
 
         private static void GroupsDataRefresh(int g)
         {
-            groups[g].TaggedUsers = TelegramClient.taggedUsersInGroup[g];
 
-            if (TelegramClient.sendedMessagesInCycle.Count == groups.Count)
-                groups[g].SendedMessagesInCurrentCycle = TelegramClient.sendedMessagesInCycle[g];
+            if (TelegramClient.sendedReactionsInCycle.Count == groups.Count)
+                groups[g].SendedMessagesInCurrentCycle = TelegramClient.sendedReactionsInCycle[g];
 
-            groups[g].SendedMessages = TelegramClient.sendedMessagesInGroup[g];
+            groups[g].SendedMessages = TelegramClient.sendedReactionsInGroup[g];
         }
 
         private static async Task DataRefresh()
@@ -92,18 +90,10 @@ namespace Tagger.Core.ViewModels
                 window.StatisticListBox.Items.Refresh();
                 window.ChatsListBox.Items.Refresh();
 
-                window.AllMessagesLbl.Content = TelegramClient.messagesSended;
+                window.AllMessagesLbl.Content = TelegramClient.reactionsSended;
                 window.CurrentGroupId.Content = TelegramClient.currentGroup;
-                window.AllUsersLbl.Content = TelegramClient.taggedUsers.Sum();
                 window.EndedGroups.Content = TelegramClient.endedChannels;
-                window.AllPartLb.Content = TelegramClient.fullCount;
-                window.UsersRestLb.Content = TelegramClient.count;
                 window.EndedIteration.Content = TelegramClient.endedIteration;
-
-                if (TelegramClient.messagesSended == 0)
-                    window.AvgUserInMsg.Content = 0;
-                else
-                    window.AvgUserInMsg.Content = Math.Round((double)TelegramClient.taggedUsers.Sum() / TelegramClient.messagesSended, 2);
             });
         }
 

@@ -606,26 +606,26 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Tagger.exe" size="460256">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Tagger.exe" size="105952">
       <assemblyIdentity name="Tagger" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>TLKHD1j9IDOhRZIrxMKIC9IIX/kOmgaYZqHTrO9Wfqk=</dsig:DigestValue>
+        <dsig:DigestValue>oKI7+AtlSVlOAsknSPT5t91IOWxH2SgEWWxbuKzTmcw=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="WTelegramClient.dll" size="562688">
-      <assemblyIdentity name="WTelegramClient" version="3.4.2.0" language="neutral" processorArchitecture="msil" />
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="WTelegramClient.dll" size="587264">
+      <assemblyIdentity name="WTelegramClient" version="3.5.7.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>KRvUY5vBeudSA9X/MbUEp85ZozwVHnqb76mSYjo+PwM=</dsig:DigestValue>
+        <dsig:DigestValue>sd/XxVLWY2oj4xksXI+6/lzEXXFwza9ugGN+J/sRvAU=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
