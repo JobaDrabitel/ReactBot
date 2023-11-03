@@ -18,13 +18,15 @@ using Tagger.Core;
 using Tagger.Core.Data;
 using Tagger.Core.Loger.LogServices;
 using Tagger.Core.ViewModels;
+using WTelegram;
 
 namespace Tagger
 {
 
     public partial class MainWindow : Window
     {
-        string _selectedImagePath;
+		TelegramClient client = new TelegramClient();
+		string _selectedImagePath;
         string _selectedStoryMediaPath;
         private DataModel _context = new DataModel();
         private LogService<MainWindow> _loger = new LogService<MainWindow>();
@@ -69,7 +71,7 @@ namespace Tagger
                 _loger.LogAction("Начата работа...");
                 if (selectedItem!= null)
                     emojiTB.Text = selectedItem;
-                TelegramClient client = new TelegramClient();
+                
                 foreach (var link in TelegramClient.inviteLinks)
                     TelegramClient.lastMessageInGroup.Add(0);
                 await Task.Run(async () =>
@@ -316,7 +318,6 @@ namespace Tagger
 
         private async void ChangeAccInfoButton_Click(object sender, RoutedEventArgs e)
         {
-            TelegramClient telegramClient = new TelegramClient();
             var selectedItem = BotsLB.SelectedItem;
             if (selectedItem != null)
             {
@@ -326,13 +327,20 @@ namespace Tagger
 
                     if (matchingItem != null)
                     {
-                        try
+                        Client selectedClient;
+
+						try
                         {
-                            var selectedClient = await telegramClient.CreateClient(matchingItem);
-                            await telegramClient.EditAccount(selectedClient, _selectedImagePath, UserFirstNameTB.Text, UserLastNameTB.Text, UserAboutTB.Text, UsernameTB.Text, _selectedStoryMediaPath, StoryCaptionTB.Text);
+                             selectedClient = await client.CreateClient(matchingItem);
+                            if (selectedClient == null) 
+                                selectedClient = TelegramClient.clients.FirstOrDefault(c => c.User.phone == selectedItem.ToString().Replace(" ", "").Replace("+", "")); 
+							await client.EditAccount(selectedClient, _selectedImagePath, UserFirstNameTB.Text, UserLastNameTB.Text, UserAboutTB.Text, UsernameTB.Text, _selectedStoryMediaPath, StoryCaptionTB.Text);
                         }
-                        catch (Exception ex) { _loger.LogAction(ex.Message); }
-                        finally
+                        catch (Exception ex) 
+                        { 
+                            
+						}
+						finally
                         {
                             MessageBox.Show("Данные успешно изменены!");
                         }

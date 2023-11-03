@@ -88,7 +88,7 @@ namespace ChatBot.Core
                     var client = await CreateClient(item);
                     if (client != null)
                     {
-                        clients.Add(client);
+
                         clientsStatus.Add(true);
                         isFloodWait.Add(0);
                         sendedReactions.Add(0);
@@ -217,7 +217,8 @@ namespace ChatBot.Core
                     MainInfoLoger.Log($"Аккаунт {item.phone} забанен или данные введены неверно, попробуйте снова.\nОшибка: {ex.Message}\nПодробнее: {ex.InnerException}");
                     return null;
                 }
-            }
+				clients.Add(thisClient);
+			}
             return thisClient;
         }
 
