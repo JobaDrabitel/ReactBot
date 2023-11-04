@@ -343,7 +343,9 @@ namespace Tagger
 						finally
                         {
                             MessageBox.Show("Данные успешно изменены!");
-                        }
+							TelegramClient.clients.FirstOrDefault(c => c.User.phone == selectedItem.ToString().Replace(" ", "").Replace("+", "")).Dispose();
+                            TelegramClient.clients.Clear();
+						}
                     }
                 }
             }
